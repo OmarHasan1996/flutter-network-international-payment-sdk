@@ -16,7 +16,7 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        if call.method == "startPayment" {
+        if call.method == "startCardPayment" {
             if NetworkInternationalPaymentSdkPlugin.flutterResult != nil {
                 result(FlutterError(code: "ALREADY_ACTIVE", message: "A payment is already in progress.", details: nil))
                 return

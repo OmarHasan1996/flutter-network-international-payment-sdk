@@ -4,11 +4,17 @@ PODS:
     - Flutter
   - network_international_payment_sdk (0.0.1):
     - Flutter
+    - NISdk
+  - NISdk (5.1.7)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - network_international_payment_sdk (from `.symlinks/plugins/network_international_payment_sdk/ios`)
+
+SPEC REPOS:
+  trunk:
+    - NISdk
 
 EXTERNAL SOURCES:
   Flutter:
@@ -21,7 +27,8 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  network_international_payment_sdk: 7196998e565a663b7a23a140f489086dbb8c56e7
+  network_international_payment_sdk: 7cc5de62c39d75d15a40d2a8502a55d066f7d4a2
+  NISdk: b0ca021999cc777257f9381f2f897f12ad16fb16
 
 PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
 

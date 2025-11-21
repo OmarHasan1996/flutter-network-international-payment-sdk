@@ -23,10 +23,10 @@ abstract class NetworkInternationalPaymentSdkPlatform extends PlatformInterface 
     _instance = instance;
   }
 
-  Future<Map<dynamic, dynamic>?> startPayment({
+  Future<Map<dynamic, dynamic>?> startCardPayment({
     required Map<String, dynamic> orderDetails,
-    required String merchantId,
+    String? merchantId,
   }) {
-    throw UnimplementedError('startPayment() has not been implemented.');
+    throw UnimplementedError('startCardPayment() has not been implemented.');
   }
 }

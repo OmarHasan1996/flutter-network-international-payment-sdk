@@ -34,7 +34,7 @@ class NetworkInternationalPaymentSdkPlugin:
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
-        if (call.method == "startPayment") {
+        if (call.method == "startCardPayment") {
             try {
                 if (pendingResult != null) {
                     result.error("ALREADY_ACTIVE", "A payment is already in progress.", null)
@@ -44,8 +44,11 @@ class NetworkInternationalPaymentSdkPlugin:
 
                 val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
                     ?: throw IllegalArgumentException("orderDetails is required")
-                val merchantId = call.argument<String>("merchantId")
-                    ?: throw IllegalArgumentException("merchantId is required")
+                val merchantId = call.argument<String>("merchantId") // Now nullable
+
+                if (merchantId == null) {
+                    throw IllegalArgumentException("merchantId is required for Android payments")
+                }
 
                 val links = (orderDetails["_links"] as? HashMap<String, Any>)
                     ?: throw Exception("_links not found in orderDetails")

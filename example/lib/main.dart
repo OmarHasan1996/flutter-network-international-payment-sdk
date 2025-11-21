@@ -3,6 +3,8 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:network_international_payment_sdk/network_international_payment_sdk.dart';
+import 'package:network_international_payment_sdk/payment_result.dart';
+import 'package:network_international_payment_sdk/payment_status.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,34 +18,33 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  PaymentResult _paymentResult = PaymentResult(PaymentStatus.UNKNOWN, "Result will be shown here");
   final _networkInternationalPaymentSdkPlugin = NetworkInternationalPaymentSdk();
 
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
+  Future<void> _startCardPayment() async {
+    PaymentResult paymentResult;
     try {
-      platformVersion =
-          await _networkInternationalPaymentSdkPlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
+      var orderDetails = {'': ''};
+      var orderDataBase64 = '';
+      var merchantId = '';
+
+      final result = await _networkInternationalPaymentSdkPlugin.startCardPayment(
+        orderDetails: orderDetails,
+        base64orderData: orderDataBase64,
+        merchantId: merchantId, 
+      );
+      paymentResult = result;
+    } on PlatformException catch (e) {
+      paymentResult = PaymentResult(PaymentStatus.FAILED, 'Platform error: ${e.message} (${e.details})');
+    } catch (e) {
+      paymentResult = PaymentResult(PaymentStatus.FAILED, 'Application error: $e');
     }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
 
     setState(() {
-      _platformVersion = platformVersion;
+      _paymentResult = paymentResult;
     });
   }
 
@@ -52,10 +53,34 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Plugin Network International Payment Sdk'),
         ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+        body: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const .all(16.0),
+                child: Column(
+                  crossAxisAlignment: .center,
+                  mainAxisSize: .max,
+                  mainAxisAlignment: .center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _startCardPayment,
+                      child: const Text('Start card Payment'),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Payment Result:',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(_paymentResult.toString()),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

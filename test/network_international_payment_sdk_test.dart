@@ -10,12 +10,12 @@ class MockNetworkInternationalPaymentSdkPlatform
     with MockPlatformInterfaceMixin
     implements NetworkInternationalPaymentSdkPlatform {
 
-  // 2. We are mocking the native `startPayment` call.
+  // 2. We are mocking the native `startCardPayment` call.
   // It will return a successful result map.
   @override
-  Future<Map?> startPayment({
+  Future<Map?> startCardPayment({
     required Map<String, dynamic> orderDetails,
-    required String merchantId,
+    String? merchantId,
   }) async {
     // 3. We check that the correct parameters are passed from the public-facing method.
     expect(merchantId, 'test_merchant');
@@ -37,13 +37,13 @@ void main() {
     plugin = NetworkInternationalPaymentSdk();
   });
 
-  test('startPayment returns a successful PaymentResult', () async {
+  test('startCardPayment returns a successful PaymentResult', () async {
     // 4. Define the input for the test.
     final testOrderDetails = {'testKey': 'testValue'};
     final testMerchantId = 'test_merchant';
 
     // 5. Call the public method.
-    final paymentResult = await plugin.startPayment(
+    final paymentResult = await plugin.startCardPayment(
       orderDetails: testOrderDetails,
       merchantId: testMerchantId,
     );
@@ -54,13 +54,13 @@ void main() {
     expect(paymentResult.reason, 'Payment was successful');
   });
   
-   test('startPayment handles base64 decoding', () async {
+   test('startCardPayment handles base64 decoding', () async {
     // Test base64 decoding logic.
     final testOrderDetails = {'testKey': 'testValue'};
     final base64Order = 'eyJ0ZXN0S2V5IjoidGVzdFZhbHVlIn0='; // {"testKey":"testValue"}
     final testMerchantId = 'test_merchant';
 
-    final paymentResult = await plugin.startPayment(
+    final paymentResult = await plugin.startCardPayment(
       base64orderData: base64Order,
       merchantId: testMerchantId,
     );

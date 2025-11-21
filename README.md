@@ -84,13 +84,14 @@ For security reasons, you must call the N-Genius APIs from your server to create
 - **Step 1: Get an Access Token:** [Request an Access Token](https://docs.ngenius-payments.com/reference/request-an-access-token-direct)
 - **Step 2: Create an Order:** [Create an Order API](https://docs.ngenius-payments.com/reference/two-stage-payments-orders)
 
-### 2. Call `startPayment`
+### 2. Call `startCardPayment`
 
-Pass the `orderDetails` map and your `merchantId` to the `startPayment` method.
+Pass the `orderDetails` map to the `startCardPayment` method. The `merchantId` is optional.
 
 ```dart
 import 'package:network_international_payment_sdk/network_international_payment_sdk.dart';
-
+import 'package:network_international_payment_sdk/payment_result.dart';
+import 'package:network_international_payment_sdk/payment_status.dart';
 // ...
 
 Future<void> makePayment() async {
@@ -100,9 +101,9 @@ Future<void> makePayment() async {
   final Map<String, dynamic> orderDetails = await getOrderDetailsFromServer();
 
   try {
-    final PaymentResult result = await paymentSdk.startPayment(
-      // The merchantId is required for the Android SDK and is ignored on iOS.
-      merchantId: "YOUR_MERCHANT_ID", 
+    final PaymentResult result = await paymentSdk.startCardPayment(
+      // The merchantId is optional and primarily used for specific Android payment flows.
+      merchantId: "YOUR_MERCHANT_ID", // Can be null
       
       // The map containing the JSON data from your server.
       orderDetails: orderDetails, 
@@ -127,8 +128,8 @@ As an alternative to passing the `orderDetails` map, you can provide a Base64-en
 ```dart
 final String base64EncodedOrder = "eyJfX2lkIjoi..."
 
-final PaymentResult result = await paymentSdk.startPayment(
-  merchantId: "YOUR_MERCHANT_ID",
+final PaymentResult result = await paymentSdk.startCardPayment(
+  merchantId: "YOUR_MERCHANT_ID", // Can be null
   base64orderData: base64EncodedOrder,
 );
 ```

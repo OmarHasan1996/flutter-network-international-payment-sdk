@@ -5,10 +5,10 @@ import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
 
 class NetworkInternationalPaymentSdk {
-  Future<PaymentResult> startPayment({
+  Future<PaymentResult> startCardPayment({
     Map<String, dynamic>? orderDetails,
     String? base64orderData,
-    required String merchantId,
+    String? merchantId,
   }) async {
     Map<String, dynamic> finalOrderDetails;
     if (orderDetails != null) {
@@ -26,7 +26,7 @@ class NetworkInternationalPaymentSdk {
           'Either orderDetails (as a Map) or base64orderData (as a String) must be provided.');
     }
 
-    final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startPayment(
+    final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startCardPayment(
       orderDetails: finalOrderDetails,
       merchantId: merchantId,
     );
