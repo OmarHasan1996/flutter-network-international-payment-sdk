@@ -1,6 +1,6 @@
-# N-Genius Payments Flutter SDK
+# N-Genius Flutter SDK
 
-A Flutter plugin that provides an easy-to-use interface for handling payments using the N-Genius native SDKs on both Android and iOS.
+A Flutter plugin to provide an easy-to-use integration for handling payments using N-Genius native SDKs in Flutter applications.
 
 ## 📱 Platform Compatibility
 - **Android** ✅
@@ -10,9 +10,11 @@ A Flutter plugin that provides an easy-to-use interface for handling payments us
 
 ## ⚙️ Android Configuration
 
-Since the N-Genius Android SDK is a JitPack dependency, you must add the JitPack repository to your project-level `android/build.gradle` file:
+Since the N-Genius Android SDK is a JitPack dependency, you must add the JitPack repository to your project-level `android/build.gradle` or `android/build.gradle.kts` file.
 
-```gradle
+#### For Groovy DSL (`build.gradle`)
+
+```groovy
 // android/build.gradle
 allprojects {
     repositories {
@@ -22,18 +24,30 @@ allprojects {
 }
 ```
 
+#### For Kotlin DSL (`build.gradle.kts`)
+
+```kotlin
+// android/build.gradle.kts
+allprojects {
+    repositories {
+        // ... other repositories
+        maven { url = uri("https://jitpack.io") } // Add this line
+    }
+}
+```
+
 ---
 
 ## 🍏 iOS Configuration
 
-The N-Genius iOS SDK (`NISdk`) is hosted on a private podspec repository. You must add it as a source at the top of your `ios/Podfile`:
+The N-Genius iOS SDK (`NISdk`) is hosted on a private podspec repository. You must add the required sources at the top of your `ios/Podfile`:
 
 ```ruby
 # ios/Podfile
 
-# Add these two lines at the top
-source 'https://github.com/CocoaPods/Specs.git'
+# Add the N-Genius private podspec repository and the main CocoaPods repository
 source 'https://github.com/network-international/pods-specs.git'
+source 'https://cdn.cocoapods.org/'
 
 platform :ios, '12.0' # Ensure your platform target is 12.0 or higher
 
@@ -46,20 +60,13 @@ After adding the source, run `pod install` in your `ios` directory.
 
 ## 🔄 Handling the Payment Response
 
-The plugin returns a `PaymentResult` object, which contains a `status` and an optional `reason`.
+The plugin returns a `PaymentResult` object, which contains a `status` (a `PaymentStatus` enum) and an optional `reason` string.
 
-```dart
-class PaymentResult {
-  final PaymentStatus status;
-  final String? reason;
-}
-```
-
-### `PaymentStatus` Enum
+### `PaymentStatus` Enum Values
 
 | Status | Description |
 |---|---|
-| `SUCCESS` | The payment was successful. |
+| `SUCCESS` | The payment was successful (Android & iOS). |
 | `FAILED` | The payment failed. Check the `reason` for more details. |
 | `CANCELLED` | The user cancelled the payment flow. |
 | `AUTHORISED` | (Android Only) The payment was authorized. |
@@ -69,11 +76,12 @@ class PaymentResult {
 | `PARTIAL_AUTH_DECLINE_FAILED`| (Android Only) The partial authorization decline failed. |
 | `UNKNOWN` | An unknown status was received. |
 
+
 ---
 
 ## 🚀 How to Use
 
-### 1. Get the Order Details
+### 1. Get the Order Details JSON
 
 For security reasons, you must call the N-Genius APIs from your server to create an order. This will give you the `orderDetails` JSON object required by the SDK.
 
@@ -82,46 +90,43 @@ For security reasons, you must call the N-Genius APIs from your server to create
 
 ### 2. Call `startPayment`
 
-Pass the `orderDetails` and your `merchantId` to the `startPayment` method.
+Pass the `orderDetails` map and your `merchantId` to the `startPayment` method.
 
 ```dart
 import 'package:network_international_payment_sdk/network_international_payment_sdk.dart';
-import 'dart:io' show Platform;
 
 // ...
 
 Future<void> makePayment() async {
   final paymentSdk = NetworkInternationalPaymentSdk();
 
-  // IMPORTANT: The structure of orderDetails is DIFFERENT for Android and iOS.
-  // You must get the correct JSON structure from your server based on the platform.
-  final Map<String, dynamic> orderDetails = await getOrderDetailsForPlatform();
+  // This must be fetched from your server.
+  final Map<String, dynamic> orderDetails = await getOrderDetailsFromServer();
 
   try {
     final PaymentResult result = await paymentSdk.startPayment(
-      // The merchantId is required for the Android SDK.
+      // The merchantId is required for the Android SDK and is ignored on iOS.
       merchantId: "YOUR_MERCHANT_ID", 
       
-      // This map contains the JSON data from your server.
+      // The map containing the JSON data from your server.
       orderDetails: orderDetails, 
     );
 
     if (result.status == PaymentStatus.SUCCESS || result.status == PaymentStatus.AUTHORISED) {
-      print("Payment Successful!");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Transaction Successful")));
     } else {
-      print("Payment Failed or Cancelled. Status: ${result.status}, Reason: ${result.reason}");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Transaction Failed: ${result.status} - ${result.reason}")));
     }
 
   } catch (e) {
-    print("An error occurred: $e");
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("An error occurred: $e")));
   }
 }
-
 ```
 
 ### Using `base64orderData`
 
-As an alternative to passing the `orderDetails` map, you can provide a Base64-encoded string of the order details JSON. The plugin will handle decoding it for you.
+As an alternative to passing the `orderDetails` map, you can provide a Base64-encoded string of the order details JSON. The plugin will handle decoding it.
 
 ```dart
 final String base64EncodedOrder = "eyJfX2lkIjoi..."
@@ -131,6 +136,12 @@ final PaymentResult result = await paymentSdk.startPayment(
   base64orderData: base64EncodedOrder,
 );
 ```
+
+### Testing
+
+You can use N-Genius test cards for payments in the sandbox environment:
+[Sandbox Test Environment](https://docs.ngenius-payments.com/reference/sandbox-test-environment)
+
 
 ## License
 
