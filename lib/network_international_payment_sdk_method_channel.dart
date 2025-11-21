@@ -10,8 +10,14 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
   final methodChannel = const MethodChannel('network_international_payment_sdk');
 
   @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
-    return version;
+  Future<Map<dynamic, dynamic>?> startPayment({
+    required Map<String, dynamic> orderDetails,
+    required String merchantId,
+  }) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startPayment', {
+      'orderDetails': orderDetails,
+      'merchantId': merchantId,
+    });
+    return result;
   }
 }
