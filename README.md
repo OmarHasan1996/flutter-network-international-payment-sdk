@@ -40,14 +40,10 @@ allprojects {
 
 ## 🍏 iOS Configuration
 
-The N-Genius iOS SDK (`NISdk`) is hosted on a private podspec repository. You must add the required sources at the top of your `ios/Podfile`:
+The N-Genius iOS SDK (`NISdk`) is included as a dependency. You just need to ensure your `ios/Podfile` targets the correct platform version:
 
 ```ruby
 # ios/Podfile
-
-# Add the N-Genius private podspec repository and the main CocoaPods repository
-source 'https://github.com/network-international/pods-specs.git'
-source 'https://cdn.cocoapods.org/'
 
 platform :ios, '12.0' # Ensure your platform target is 12.0 or higher
 
