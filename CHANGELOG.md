@@ -1,3 +1,5 @@
-## 0.0.1
+# 1.0.0
 
-* TODO: Describe initial release.
+* Initial release of the N-Genius / Network International Payments SDK Flutter plugin.
+* Supports card payments on both Android and iOS.
+* Provides a structured `PaymentResult` for handling payment outcomes.
