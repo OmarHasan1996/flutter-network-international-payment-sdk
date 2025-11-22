@@ -7,7 +7,7 @@ enum PaymentStatus {
   // Detailed statuses from the SDK
   authorized,
   postAuthReview,
-  postAuthDeclined,
-  postAuthDeclinedFailed,
+  partialAuthDeclined,
+  partialAuthDeclineFailed,
   partiallyAuthorized
 }

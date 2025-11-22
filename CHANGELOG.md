@@ -1,4 +1,9 @@
-# 1.0.0
+## 1.0.1
+
+* Refactored `PaymentStatus` enum to use `lowerCamelCase` to align with Dart conventions.
+* Improved mapping from native status strings to the Dart enum.
+
+## 1.0.0
 
 * Initial release of the N-Genius / Network International Payments SDK Flutter plugin.
 * Supports card payments on both Android and iOS.

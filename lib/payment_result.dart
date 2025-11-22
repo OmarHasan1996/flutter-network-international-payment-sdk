@@ -8,12 +8,39 @@ class PaymentResult {
   PaymentResult(this.status, this.reason);
 
   factory PaymentResult.fromMap(Map<dynamic, dynamic> map) {
-    final statusString = map['status'] as String?;
+    final statusString = map['status'] as String? ?? 'UNKNOWN';
     final reason = map['reason'] as String?;
-    final status = PaymentStatus.values.firstWhere(
-          (e) => e.toString() == 'PaymentStatus.$statusString',
-      orElse: () => PaymentStatus.unknown,
-    );
+    
+    PaymentStatus status;
+    switch (statusString) {
+      case 'SUCCESS':
+        status = PaymentStatus.success;
+        break;
+      case 'FAILED':
+        status = PaymentStatus.failed;
+        break;
+      case 'CANCELLED':
+        status = PaymentStatus.cancelled;
+        break;
+      case 'AUTHORISED':
+        status = PaymentStatus.authorized;
+        break;
+      case 'POST_AUTH_REVIEW':
+        status = PaymentStatus.postAuthReview;
+        break;
+      case 'PARTIAL_AUTH_DECLINED':
+        status = PaymentStatus.partialAuthDeclined;
+        break;
+      case 'PARTIAL_AUTH_DECLINE_FAILED':
+        status = PaymentStatus.partialAuthDeclineFailed;
+        break;
+      case 'PARTIALLY_AUTHORISED':
+        status = PaymentStatus.partiallyAuthorized;
+        break;
+      default:
+        status = PaymentStatus.unknown;
+    }
+    
     return PaymentResult(status, reason);
   }
 
