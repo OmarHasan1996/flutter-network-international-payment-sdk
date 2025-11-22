@@ -12,7 +12,7 @@ class PaymentResult {
     final reason = map['reason'] as String?;
     final status = PaymentStatus.values.firstWhere(
           (e) => e.toString() == 'PaymentStatus.$statusString',
-      orElse: () => PaymentStatus.UNKNOWN,
+      orElse: () => PaymentStatus.unknown,
     );
     return PaymentResult(status, reason);
   }

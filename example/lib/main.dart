@@ -18,7 +18,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  PaymentResult _paymentResult = PaymentResult(PaymentStatus.UNKNOWN, "Result will be shown here");
+  PaymentResult _paymentResult = PaymentResult(PaymentStatus.unknown, "Result will be shown here");
   final _networkInternationalPaymentSdkPlugin = NetworkInternationalPaymentSdk();
 
 
@@ -36,9 +36,9 @@ class _MyAppState extends State<MyApp> {
       );
       paymentResult = result;
     } on PlatformException catch (e) {
-      paymentResult = PaymentResult(PaymentStatus.FAILED, 'Platform error: ${e.message} (${e.details})');
+      paymentResult = PaymentResult(PaymentStatus.failed, 'Platform error: ${e.message} (${e.details})');
     } catch (e) {
-      paymentResult = PaymentResult(PaymentStatus.FAILED, 'Application error: $e');
+      paymentResult = PaymentResult(PaymentStatus.failed, 'Application error: $e');
     }
 
     if (!mounted) return;

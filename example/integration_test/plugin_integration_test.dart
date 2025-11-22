@@ -22,6 +22,6 @@ void main() {
     final PaymentResult paymentResult = await plugin.startCardPayment();
     // The version string depends on the host platform running the test, so
     // just assert that some non-empty string is returned.
-    expect(paymentResult.status, PaymentStatus.FAILED);
+    expect(paymentResult.status, PaymentStatus.failed);
   });
 }
