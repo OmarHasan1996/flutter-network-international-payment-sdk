@@ -32,7 +32,7 @@ class NetworkInternationalPaymentSdk {
     );
 
     if (resultMap == null) {
-      return PaymentResult(PaymentStatus.UNKNOWN, "Did not receive a response from the native side.");
+      return PaymentResult(PaymentStatus.unknown, "Did not receive a response from the native side.");
     }
     
     return PaymentResult.fromMap(resultMap);

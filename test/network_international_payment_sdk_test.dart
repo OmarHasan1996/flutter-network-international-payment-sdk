@@ -50,13 +50,12 @@ void main() {
 
     // 6. Verify that the result is correctly parsed into a PaymentResult object.
     expect(paymentResult, isA<PaymentResult>());
-    expect(paymentResult.status, PaymentStatus.SUCCESS);
+    expect(paymentResult.status, PaymentStatus.success);
     expect(paymentResult.reason, 'Payment was successful');
   });
   
    test('startCardPayment handles base64 decoding', () async {
     // Test base64 decoding logic.
-    final testOrderDetails = {'testKey': 'testValue'};
     final base64Order = 'eyJ0ZXN0S2V5IjoidGVzdFZhbHVlIn0='; // {"testKey":"testValue"}
     final testMerchantId = 'test_merchant';
 
@@ -66,6 +65,6 @@ void main() {
     );
 
     expect(paymentResult, isA<PaymentResult>());
-    expect(paymentResult.status, PaymentStatus.SUCCESS);
+    expect(paymentResult.status, PaymentStatus.success);
   });
 }
