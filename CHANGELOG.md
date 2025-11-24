@@ -1,3 +1,7 @@
+## 1.2.0
+
+* Added `startSavedCardPayment` method to support payments with saved cards.
+
 ## 1.1.0
 
 * Added UI customization options (`showOrderAmount`, `showCancelAlert`).

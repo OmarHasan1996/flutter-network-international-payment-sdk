@@ -35,61 +35,85 @@ class NetworkInternationalPaymentSdkPlugin:
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
-        if (call.method == "startCardPayment") {
-            try {
-                if (pendingResult != null) {
-                    result.error("ALREADY_ACTIVE", "A payment is already in progress.", null)
-                    return
-                }
-                pendingResult = result
-
-                val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
-                    ?: throw IllegalArgumentException("orderDetails is required")
-                val merchantId = call.argument<String>("merchantId")
-                
-                // Add logic to handle the new UI flags
-                val showOrderAmount = call.argument<Boolean>("showOrderAmount")
-                val showCancelAlert = call.argument<Boolean>("showCancelAlert")
-
-                // Configure the SDK with the new settings, defaulting to true if null
-                SDKConfig.shouldShowOrderAmount(showOrderAmount ?: true)
-                SDKConfig.shouldShowCancelAlert(showCancelAlert ?: true)
-
-                val links = (orderDetails["_links"] as? HashMap<String, Any>)
-                    ?: throw Exception("_links not found in orderDetails")
-
-                val authUrl = ((links["payment-authorization"] as? HashMap<String, Any>)?.get("href") as? String)
-                    ?: throw Exception("Authorization URL not found in orderDetails")
-
-                val paymentUrl = ((links["payment"] as? HashMap<String, Any>)?.get("href") as? String)
-                    ?: throw Exception("Payment URL not found in orderDetails")
-
-                val code = paymentUrl.substringAfter("code=").takeIf { it.isNotEmpty() }
-                    ?: throw Exception("Code not found or is empty in payment URL")
-
-                activity?.let { currentActivity ->
-                    val paymentClient = PaymentClient(currentActivity, merchantId)
-                    paymentClient.launchCardPayment(
-                        CardPaymentRequest.Builder()
-                            .gatewayUrl(authUrl)
-                            .code(code)
-                            .build(),
-                        CARD_PAYMENT_REQUEST_CODE
-                    )
-                } ?: run {
-                    throw IllegalStateException("Plugin is not attached to a valid activity")
-                }
-
-            } catch (e: Exception) {
-                pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
-                pendingResult = null
-            }
-        } else {
-            result.notImplemented()
+        when (call.method) {
+            "startCardPayment" -> handleNewCardPayment(call, result)
+            "startSavedCardPayment" -> handleSavedCardPayment(call, result)
+            else -> result.notImplemented()
         }
     }
 
-    private fun toPaymentResultMap(data: CardPaymentData?): Map<String, String> {
+    private fun handleNewCardPayment(call: MethodCall, result: Result) {
+        try {
+            if (pendingResult != null) {
+                result.error("ALREADY_ACTIVE", "A payment is already in progress.", null)
+                return
+            }
+            pendingResult = result
+
+            val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
+                ?: throw IllegalArgumentException("orderDetails is required")
+            val merchantId = call.argument<String>("merchantId")
+            
+            // UI flags
+            val showOrderAmount = call.argument<Boolean>("showOrderAmount")
+            val showCancelAlert = call.argument<Boolean>("showCancelAlert")
+            SDKConfig.shouldShowOrderAmount(showOrderAmount ?: true)
+            SDKConfig.shouldShowCancelAlert(showCancelAlert ?: true)
+
+            val links = (orderDetails["_links"] as? HashMap<String, Any>)
+                ?: throw Exception("_links not found in orderDetails")
+
+            val authUrl = ((links["payment-authorization"] as? HashMap<String, Any>)?.get("href") as? String)
+                ?: throw Exception("Authorization URL not found in orderDetails")
+
+            val paymentUrl = ((links["payment"] as? HashMap<String, Any>)?.get("href") as? String)
+                ?: throw Exception("Payment URL not found in orderDetails")
+
+            val code = paymentUrl.substringAfter("code=").takeIf { it.isNotEmpty() }
+                ?: throw Exception("Code not found or is empty in payment URL")
+
+            activity?.let { currentActivity ->
+                val paymentClient = PaymentClient(currentActivity, merchantId)
+                paymentClient.launchCardPayment(
+                    CardPaymentRequest.Builder()
+                        .gatewayUrl(authUrl)
+                        .code(code)
+                        .build(),
+                    CARD_PAYMENT_REQUEST_CODE
+                )
+            } ?: throw IllegalStateException("Plugin is not attached to a valid activity")
+
+        } catch (e: Exception) {
+            pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
+            pendingResult = null
+        }
+    }
+    
+    private fun handleSavedCardPayment(call: MethodCall, result: Result) {
+        try {
+             if (pendingResult != null) {
+                result.error("ALREADY_ACTIVE", "A payment is already in progress.", null)
+                return
+            }
+            pendingResult = result
+
+            val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
+                ?: throw IllegalArgumentException("orderDetails is required")
+            val serviceId = call.argument<String>("merchantId") // Using merchantId as serviceId
+            val cvv = call.argument<String>("cvv")
+
+             activity?.let { currentActivity ->
+                val paymentClient = PaymentClient(currentActivity, serviceId)
+                paymentClient.launchSavedCardPayment(order = orderDetails, cvv = cvv, code = CARD_PAYMENT_REQUEST_CODE)
+             } ?: throw IllegalStateException("Plugin is not attached to a valid activity")
+
+        } catch (e: Exception) {
+            pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
+            pendingResult = null
+        }
+    }
+
+    private fun toPaymentResultMap(data: CardPaymentData?): Map<String, String?> {
         if (data == null) {
             return mapOf("status" to "ERROR", "reason" to "CardPaymentData was null")
         }

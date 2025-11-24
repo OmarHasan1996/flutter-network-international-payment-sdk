@@ -26,4 +26,18 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
     });
     return result;
   }
+
+  @override
+  Future<Map<dynamic, dynamic>?> startSavedCardPayment({
+    required Map<String, dynamic> orderDetails,
+    String? merchantId,
+    String? cvv,
+  }) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startSavedCardPayment', {
+      'orderDetails': orderDetails,
+      'merchantId': merchantId,
+      'cvv': cvv,
+    });
+    return result;
+  }
 }

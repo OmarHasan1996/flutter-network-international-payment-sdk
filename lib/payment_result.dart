@@ -1,16 +1,22 @@
-// A class to hold the structured result of a payment operation.
 import 'package:network_international_payment_sdk/payment_status.dart';
 
+/// A class to hold the structured result of a payment operation.
 class PaymentResult {
+  /// The final status of the payment.
   final PaymentStatus status;
+
+  /// An optional string providing more details about the result, especially for failures.
   final String? reason;
 
+  /// Creates a new PaymentResult.
   PaymentResult(this.status, this.reason);
 
+  /// A factory constructor to create a `PaymentResult` from a map received from the native side.
+  /// This is used internally by the plugin.
   factory PaymentResult.fromMap(Map<dynamic, dynamic> map) {
     final statusString = map['status'] as String? ?? 'UNKNOWN';
     final reason = map['reason'] as String?;
-    
+
     PaymentStatus status;
     switch (statusString) {
       case 'SUCCESS':
@@ -40,7 +46,7 @@ class PaymentResult {
       default:
         status = PaymentStatus.unknown;
     }
-    
+
     return PaymentResult(status, reason);
   }
 

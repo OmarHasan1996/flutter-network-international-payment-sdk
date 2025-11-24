@@ -63,7 +63,7 @@ For security reasons, you must call the N-Genius APIs from your server to create
 - **Step 1: Get an Access Token:** [Request an Access Token](https://docs.ngenius-payments.com/reference/request-an-access-token-direct)
 - **Step 2: Create an Order:** [Create an Order API](https://docs.ngenius-payments.com/reference/two-stage-payments-orders)
 
-### 2. Call `startCardPayment`
+### 2. Call `startCardPayment` (for new cards)
 
 Pass the `orderDetails` map to the `startCardPayment` method. The `merchantId` is optional.
 
@@ -93,16 +93,26 @@ Future<void> makePayment() async {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Transaction Failed: ${result.status} - ${result.reason}")));
     }
-
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("An error occurred: $e")));
   }
 }
+
+### 3. Call `startSavedCardPayment` (for saved cards)
+
+For saved card payments, use the `startSavedCardPayment` method and optionally provide the user's CVV.
+
+```dart
+final PaymentResult result = await paymentSdk.startSavedCardPayment(
+  merchantId: "YOUR_MERCHANT_ID", // Optional
+  orderDetails: orderDetails, 
+  cvv: "123", // Optional
+);
 ```
 
 ### Using `base64orderData`
 
-As an alternative to passing the `orderDetails` map, you can provide a Base64-encoded string of the order details JSON. The plugin will handle decoding it.
+As an alternative to passing the `orderDetails` map, you can provide a Base64-encoded string of the order details JSON for either payment method.
 
 ```dart
 final String base64EncodedOrder = "eyJfX2lkIjoi..."

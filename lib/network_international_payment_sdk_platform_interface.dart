@@ -32,4 +32,12 @@ abstract class NetworkInternationalPaymentSdkPlatform extends PlatformInterface 
   }) {
     throw UnimplementedError('startCardPayment() has not been implemented.');
   }
+
+  Future<Map<dynamic, dynamic>?> startSavedCardPayment({
+    required Map<String, dynamic> orderDetails,
+    String? merchantId,
+    String? cvv,
+  }) {
+    throw UnimplementedError('startSavedCardPayment() has not been implemented.');
+  }
 }

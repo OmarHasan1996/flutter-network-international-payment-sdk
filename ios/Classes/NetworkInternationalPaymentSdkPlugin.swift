@@ -16,74 +16,60 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        if call.method == "startCardPayment" {
-            if NetworkInternationalPaymentSdkPlugin.flutterResult != nil {
-                result(FlutterError(code: "ALREADY_ACTIVE", message: "A payment is already in progress.", details: nil))
-                return
-            }
-            NetworkInternationalPaymentSdkPlugin.flutterResult = result
-            handlePayment(call: call)
-        } else {
+        if NetworkInternationalPaymentSdkPlugin.flutterResult != nil {
+            result(FlutterError(code: "ALREADY_ACTIVE", message: "A payment is already in progress.", details: nil))
+            return
+        }
+        NetworkInternationalPaymentSdkPlugin.flutterResult = result
+
+        switch call.method {
+        case "startCardPayment":
+            handleNewCardPayment(call: call)
+        case "startSavedCardPayment":
+            handleSavedCardPayment(call: call)
+        default:
             result(FlutterMethodNotImplemented)
         }
     }
 
-    private func handlePayment(call: FlutterMethodCall) {
+    private func handleNewCardPayment(call: FlutterMethodCall) {
         guard let args = call.arguments as? [String: Any],
               let orderDetails = args["orderDetails"] as? [String: Any] else {
-            let error = FlutterError(code: "INVALID_ARGUMENTS", message: "orderDetails (as a Map) is required", details: nil)
-            NetworkInternationalPaymentSdkPlugin.flutterResult?(error)
-            NetworkInternationalPaymentSdkPlugin.flutterResult = nil
+            completePayment(withError: FlutterError(code: "INVALID_ARGUMENTS", message: "orderDetails are required", details: nil))
             return
         }
+        
+        applyUISettings(from: args)
+        
+        do {
+            let orderData = try JSONSerialization.data(withJSONObject: orderDetails, options: [])
+            let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
 
-        let showOrderAmount = args["showOrderAmount"] as? Bool
-        let showCancelAlert = args["showCancelAlert"] as? Bool
-        let theme = args["theme"] as? [String: [String: String]]
-
-        let sharedSDKInstance = NISdk.sharedInstance
-        if let showAmount = showOrderAmount {
-            sharedSDKInstance.shouldShowOrderAmount = showAmount
-        }
-        if let showPrompt = showCancelAlert {
-            sharedSDKInstance.shouldShowCancelAlert = showPrompt
-        }
-
-        if let iosTheme = theme?["ios"] {
-            let sdkColors = NISdkColors()
-
-            let mapping: [String: (String) -> Void] = [
-                "cardPreviewColor": { sdkColors.cardPreviewColor = self.hexStringToUIColor(hex: $0) },
-                "cardPreviewLabelColor": { sdkColors.cardPreviewLabelColor = self.hexStringToUIColor(hex: $0) },
-                "payPageBackgroundColor": { sdkColors.payPageBackgroundColor = self.hexStringToUIColor(hex: $0) },
-                "payPageLabelColor": { sdkColors.payPageLabelColor = self.hexStringToUIColor(hex: $0) },
-                "textFieldLabelColor": { sdkColors.textFieldLabelColor = self.hexStringToUIColor(hex: $0) },
-                "textFieldPlaceholderColor": { sdkColors.textFieldPlaceholderColor = self.hexStringToUIColor(hex: $0) },
-                "payPageDividerColor": { sdkColors.payPageDividerColor = self.hexStringToUIColor(hex: $0) },
-                "payButtonBackgroundColor": { sdkColors.payButtonBackgroundColor = self.hexStringToUIColor(hex: $0) },
-                "payButtonTitleColor": { sdkColors.payButtonTitleColor = self.hexStringToUIColor(hex: $0) },
-                "payButtonTitleColorHighlighted": { sdkColors.payButtonTitleColorHighlighted = self.hexStringToUIColor(hex: $0) },
-                "payButtonActivityIndicatorColor": { sdkColors.payButtonActivityIndicatorColor = self.hexStringToUIColor(hex: $0) },
-                "payPageTitleColor": { sdkColors.payPageTitleColor = self.hexStringToUIColor(hex: $0) }
-            ]
-
-            for (key, applyColor) in mapping {
-                if let hex = iosTheme[key] {
-                    applyColor(hex)
+            DispatchQueue.main.async {
+                guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
+                    self.completePayment(withError: FlutterError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil))
+                    return
                 }
+
+                NISdk.sharedInstance.showCardPaymentViewWith(cardPaymentDelegate: self,
+                                                          overParent: rootViewController,
+                                                          for: orderResponse)
             }
-
-            sharedSDKInstance.setSDKColors(sdkColors: sdkColors)
+        } catch {
+            let errorMessage = "Failed to create OrderResponse. Error: \(error)"
+            completePayment(withError: FlutterError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
         }
-
-
-
-        if #available(iOS 14.0, *) {
-            let logger = Logger(subsystem: "com.enoc.networkInternationalPaymentSdkExample", category: "Payment");
-            logger.info("Attempting to create OrderResponse from the following dictionary: \(orderDetails, privacy: .public)")
-        } else {
-            os_log("N-Genius Plugin: Attempting to create OrderResponse from dictionary: %{public}@", log: OSLog.default, type: .info, orderDetails as CVarArg)
+    }
+    
+    private func handleSavedCardPayment(call: FlutterMethodCall) {
+        guard let args = call.arguments as? [String: Any],
+              let orderDetails = args["orderDetails"] as? [String: Any] else {
+            completePayment(withError: FlutterError(code: "INVALID_ARGUMENTS", message: "orderDetails are required", details: nil))
+            return
         }
+        
+        let cvv = args["cvv"] as? String
+        applyUISettings(from: args)
 
         do {
             let orderData = try JSONSerialization.data(withJSONObject: orderDetails, options: [])
@@ -91,32 +77,23 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
 
             DispatchQueue.main.async {
                 guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
-                    let error = FlutterError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil)
-                    NetworkInternationalPaymentSdkPlugin.flutterResult?(error)
-                    NetworkInternationalPaymentSdkPlugin.flutterResult = nil
+                    self.completePayment(withError: FlutterError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil))
                     return
                 }
 
-                do {
-                    sharedSDKInstance.showCardPaymentViewWith(cardPaymentDelegate: self,
-                                                              overParent: rootViewController,
-                                                              for: orderResponse)
-                } catch {
-                    let error = FlutterError(code: "SDK_RUNTIME_ERROR", message: "An unexpected error occurred when showing the payment view: \(error)", details: nil)
-                    NetworkInternationalPaymentSdkPlugin.flutterResult?(error)
-                    NetworkInternationalPaymentSdkPlugin.flutterResult = nil
-                }
+                NISdk.sharedInstance.launchSavedCardPayment(cardPaymentDelegate: self,
+                                                           overParent: rootViewController,
+                                                           for: orderResponse,
+                                                           with: cvv)
             }
         } catch {
-            let errorMessage = "Failed to create OrderResponse from the provided 'orderDetails' map. Check the map's structure and data types. Decoding Error: \(error)"
-            let error = FlutterError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription)
-            NetworkInternationalPaymentSdkPlugin.flutterResult?(error)
-            NetworkInternationalPaymentSdkPlugin.flutterResult = nil
+            let errorMessage = "Failed to create OrderResponse. Error: \(error)"
+            completePayment(withError: FlutterError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
         }
     }
 
+    // MARK: - CardPaymentDelegate
     public func paymentDidComplete(with status: PaymentStatus) {
-        guard let result = NetworkInternationalPaymentSdkPlugin.flutterResult else { return }
         let paymentResult: [String: String]
         switch status {
         case .PaymentSuccess: paymentResult = ["status": "SUCCESS", "reason": "Payment was successful"]
@@ -124,17 +101,70 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
         case .PaymentCancelled: paymentResult = ["status": "CANCELLED", "reason": "Payment was cancelled by the user"]
         @unknown default: paymentResult = ["status": "UNKNOWN", "reason": "An unknown payment status was received"]
         }
-        result(paymentResult)
-        NetworkInternationalPaymentSdkPlugin.flutterResult = nil
+        completePayment(withResult: paymentResult)
     }
 
     public func authorizationDidComplete(with status: AuthorizationStatus) {
         if status == .AuthFailed {
-            guard let result = NetworkInternationalPaymentSdkPlugin.flutterResult else { return }
             let paymentResult: [String: String] = ["status": "FAILED", "reason": "Auth Failed"]
-            result(paymentResult)
-            NetworkInternationalPaymentSdkPlugin.flutterResult = nil
+            completePayment(withResult: paymentResult)
         }
+    }
+}
+
+// MARK: - Private Helpers
+private extension NetworkInternationalPaymentSdkPlugin {
+    
+    /// Applies all UI-related settings from the method call arguments.
+    func applyUISettings(from args: [String: Any]) {
+        let showOrderAmount = args["showOrderAmount"] as? Bool
+        let showCancelAlert = args["showCancelAlert"] as? Bool
+        let theme = args["theme"] as? [String: [String: String]]
+
+        let sharedSDKInstance = NISdk.sharedInstance
+        if let showAmount = showOrderAmount { sharedSDKInstance.shouldShowOrderAmount = showAmount }
+        if let showPrompt = showCancelAlert { sharedSDKInstance.shouldShowCancelAlert = showPrompt }
+
+        if let iosTheme = theme?["ios"] { applyTheme(from: iosTheme) }
+    }
+    
+    /// Configures the SDK's colors from a theme dictionary.
+    func applyTheme(from iosTheme: [String: String]) {
+        let sdkColors = NISdkColors()
+        let colorMapping: [String: (UIColor) -> Void] = [
+            "cardPreviewColor": { sdkColors.cardPreviewColor = $0 },
+            "cardPreviewLabelColor": { sdkColors.cardPreviewLabelColor = $0 },
+            "payPageBackgroundColor": { sdkColors.payPageBackgroundColor = $0 },
+            "payPageLabelColor": { sdkColors.payPageLabelColor = $0 },
+            "textFieldLabelColor": { sdkColors.textFieldLabelColor = $0 },
+            "textFieldPlaceholderColor": { sdkColors.textFieldPlaceholderColor = $0 },
+            "payPageDividerColor": { sdkColors.payPageDividerColor = $0 },
+            "payButtonBackgroundColor": { sdkColors.payButtonBackgroundColor = $0 },
+            "payButtonTitleColor": { sdkColors.payButtonTitleColor = $0 },
+            "payButtonTitleColorHighlighted": { sdkColors.payButtonTitleColorHighlighted = $0 },
+            "payButtonActivityIndicatorColor": { sdkColors.payButtonActivityIndicatorColor = $0 },
+            "payPageTitleColor": { sdkColors.payPageTitleColor = $0 }
+        ]
+
+        for (key, applyColor) in colorMapping {
+            if let hex = iosTheme[key] {
+                applyColor(hexStringToUIColor(hex: hex))
+            }
+        }
+
+        NISdk.sharedInstance.setSDKColors(sdkColors: sdkColors)
+    }
+    
+    func completePayment(withResult result: Any) {
+        guard let flutterResult = NetworkInternationalPaymentSdkPlugin.flutterResult else { return }
+        flutterResult(result)
+        NetworkInternationalPaymentSdkPlugin.flutterResult = nil
+    }
+    
+    func completePayment(withError error: FlutterError) {
+        guard let flutterResult = NetworkInternationalPaymentSdkPlugin.flutterResult else { return }
+        flutterResult(error)
+        NetworkInternationalPaymentSdkPlugin.flutterResult = nil
     }
     
     func hexStringToUIColor (hex:String) -> UIColor {
@@ -143,11 +173,6 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
         if ((cString.count) != 6) { return UIColor.gray }
         var rgbValue:UInt64 = 0
         Scanner(string: cString).scanHexInt64(&rgbValue)
-        return UIColor(
-            red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
-            green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0,
-            blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
-            alpha: CGFloat(1.0)
-        )
+        return UIColor(red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0, green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0, blue: CGFloat(rgbValue & 0x0000FF) / 255.0, alpha: CGFloat(1.0))
     }
 }
