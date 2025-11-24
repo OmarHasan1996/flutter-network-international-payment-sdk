@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
+import 'package:network_international_payment_sdk/apple_pay_config.dart';
 import 'package:network_international_payment_sdk/network_international_payment_sdk_platform_interface.dart';
 import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
@@ -45,6 +47,29 @@ class NetworkInternationalPaymentSdk {
       orderDetails: finalOrderDetails,
       merchantId: merchantId,
       cvv: cvv,
+    );
+
+    if (resultMap == null) {
+      return PaymentResult(PaymentStatus.unknown, "Did not receive a response from the native side.");
+    }
+
+    return PaymentResult.fromMap(resultMap);
+  }
+  
+  /// (iOS Only) Initiates a payment using Apple Pay.
+  Future<PaymentResult> startApplePay({
+    Map<String, dynamic>? orderDetails,
+    String? base64orderData,
+    required PKPaymentRequest applePayConfig,
+  }) async {
+    if (!Platform.isIOS) {
+      return PaymentResult(PaymentStatus.failed, "Apple Pay is only supported on iOS.");
+    }
+    final finalOrderDetails = _prepareOrderDetails(orderDetails, base64orderData);
+
+    final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startApplePay(
+      orderDetails: finalOrderDetails,
+      applePayConfig: applePayConfig.toMap(),
     );
 
     if (resultMap == null) {

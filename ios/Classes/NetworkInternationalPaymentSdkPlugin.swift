@@ -2,8 +2,9 @@ import Flutter
 import UIKit
 import NISdk
 import os.log
+import PassKit
 
-public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, CardPaymentDelegate {
+public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, CardPaymentDelegate, ApplePayDelegate {
     private var methodChannel: FlutterMethodChannel!
     static var flutterResult: FlutterResult?
 
@@ -27,6 +28,8 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
             handleNewCardPayment(call: call)
         case "startSavedCardPayment":
             handleSavedCardPayment(call: call)
+        case "startApplePay":
+            handleApplePay(call: call)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -91,8 +94,47 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
             completePayment(withError: FlutterError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
         }
     }
+    
+    private func handleApplePay(call: FlutterMethodCall) {
+        guard let args = call.arguments as? [String: Any],
+              let orderDetails = args["orderDetails"] as? [String: Any],
+              let applePayConfig = args["applePayConfig"] as? [String: Any] else {
+            completePayment(withError: FlutterError(code: "INVALID_ARGUMENTS", message: "orderDetails and applePayConfig are required", details: nil))
+            return
+        }
+        
+        do {
+            let orderData = try JSONSerialization.data(withJSONObject: orderDetails, options: [])
+            let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
+            
+            var paymentRequest = try PKPaymentRequest(from: applePayConfig)
+            
+            // Add the total amount from the order to the payment summary.
+            if let amountValue = orderResponse.amount?.value {
+                let totalAmount = NSDecimalNumber(value: amountValue).dividing(by: 100) // Assuming the amount is in minor units
+                paymentRequest.paymentSummaryItems.append(PKPaymentSummaryItem(label: "TOTAL", amount: totalAmount))
+            }
 
-    // MARK: - CardPaymentDelegate
+            DispatchQueue.main.async {
+                guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
+                    self.completePayment(withError: FlutterError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil))
+                    return
+                }
+
+                NISdk.sharedInstance.initiateApplePayWith(applePayDelegate: self,
+                                                          cardPaymentDelegate: self,
+                                                          overParent: rootViewController,
+                                                          for: orderResponse,
+                                                          with: paymentRequest)
+            }
+        } catch {
+            let errorMessage = "Failed to create payment request for Apple Pay. Error: \(error)"
+            completePayment(withError: FlutterError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
+        }
+    }
+
+    // MARK: - CardPaymentDelegate & ApplePayDelegate
+    
     public func paymentDidComplete(with status: PaymentStatus) {
         let paymentResult: [String: String]
         switch status {
@@ -174,5 +216,30 @@ private extension NetworkInternationalPaymentSdkPlugin {
         var rgbValue:UInt64 = 0
         Scanner(string: cString).scanHexInt64(&rgbValue)
         return UIColor(red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0, green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0, blue: CGFloat(rgbValue & 0x0000FF) / 255.0, alpha: CGFloat(1.0))
+    }
+}
+
+// MARK: - Apple Pay PKPaymentRequest Helper
+private extension PKPaymentRequest {
+    convenience init(from dictionary: [String: Any]) throws {
+        self.init()
+        
+        guard let merchantId = dictionary["merchantIdentifier"] as? String,
+              let countryCode = dictionary["countryCode"] as? String,
+              let currencyCode = dictionary["currencyCode"] as? String,
+              let summaryItems = dictionary["paymentSummaryItems"] as? [[String: Any]] else {
+            throw NSError(domain: "com.enoc.network_international_payment_sdk", code: 100, userInfo: [NSLocalizedDescriptionKey: "Missing required fields in applePayConfig"])
+        }
+        
+        self.merchantIdentifier = merchantId
+        self.countryCode = countryCode
+        self.currencyCode = currencyCode
+        self.merchantCapabilities = [.capability3DS, .capabilityDebit, .capabilityCredit]
+        
+        self.paymentSummaryItems = summaryItems.map { item -> PKPaymentSummaryItem in
+            let label = item["label"] as? String ?? ""
+            let amount = item["amount"] as? Double ?? 0.0
+            return PKPaymentSummaryItem(label: label, amount: NSDecimalNumber(value: amount))
+        }
     }
 }

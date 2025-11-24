@@ -40,4 +40,11 @@ abstract class NetworkInternationalPaymentSdkPlatform extends PlatformInterface 
   }) {
     throw UnimplementedError('startSavedCardPayment() has not been implemented.');
   }
+
+  Future<Map<dynamic, dynamic>?> startApplePay({
+    required Map<String, dynamic> orderDetails,
+    required Map<String, dynamic> applePayConfig,
+  }) {
+    throw UnimplementedError('startApplePay() has not been implemented.');
+  }
 }

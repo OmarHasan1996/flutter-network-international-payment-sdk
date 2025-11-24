@@ -40,4 +40,16 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
     });
     return result;
   }
+
+  @override
+  Future<Map<dynamic, dynamic>?> startApplePay({
+    required Map<String, dynamic> orderDetails,
+    required Map<String, dynamic> applePayConfig,
+  }) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startApplePay', {
+      'orderDetails': orderDetails,
+      'applePayConfig': applePayConfig,
+    });
+    return result;
+  }
 }

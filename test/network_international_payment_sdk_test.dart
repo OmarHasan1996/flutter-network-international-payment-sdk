@@ -34,6 +34,12 @@ class MockNetworkInternationalPaymentSdkPlatform
     // TODO: implement startSavedCardPayment
     throw UnimplementedError();
   }
+
+  @override
+  Future<Map<dynamic, dynamic>?> startApplePay({required Map<String, dynamic> orderDetails, required Map<String, dynamic> applePayConfig}) {
+    // TODO: implement startApplePay
+    throw UnimplementedError();
+  }
 }
 
 void main() {
