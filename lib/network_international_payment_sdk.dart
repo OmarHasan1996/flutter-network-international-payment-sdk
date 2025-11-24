@@ -3,12 +3,16 @@ import 'dart:convert';
 import 'package:network_international_payment_sdk/network_international_payment_sdk_platform_interface.dart';
 import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
+import 'package:network_international_payment_sdk/theme.dart';
 
 class NetworkInternationalPaymentSdk {
   Future<PaymentResult> startCardPayment({
     Map<String, dynamic>? orderDetails,
     String? base64orderData,
     String? merchantId,
+    bool? showOrderAmount,
+    bool? showCancelAlert,
+    NITheme? theme,
   }) async {
     Map<String, dynamic> finalOrderDetails;
     if (orderDetails != null) {
@@ -29,6 +33,9 @@ class NetworkInternationalPaymentSdk {
     final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startCardPayment(
       orderDetails: finalOrderDetails,
       merchantId: merchantId,
+      showOrderAmount: showOrderAmount,
+      showCancelAlert: showCancelAlert,
+      theme: theme?.toMap(), // Convert the theme object to a map
     );
 
     if (resultMap == null) {

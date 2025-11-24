@@ -13,6 +13,7 @@ import io.flutter.plugin.common.PluginRegistry
 import payment.sdk.android.PaymentClient
 import payment.sdk.android.cardpayment.CardPaymentData
 import payment.sdk.android.cardpayment.CardPaymentRequest
+import payment.sdk.android.core.SDKConfig
 
 class NetworkInternationalPaymentSdkPlugin:
     FlutterPlugin,
@@ -44,11 +45,15 @@ class NetworkInternationalPaymentSdkPlugin:
 
                 val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
                     ?: throw IllegalArgumentException("orderDetails is required")
-                val merchantId = call.argument<String>("merchantId") // Now nullable
+                val merchantId = call.argument<String>("merchantId")
+                
+                // Add logic to handle the new UI flags
+                val showOrderAmount = call.argument<Boolean>("showOrderAmount")
+                val showCancelAlert = call.argument<Boolean>("showCancelAlert")
 
-                if (merchantId == null) {
-                    throw IllegalArgumentException("merchantId is required for Android payments")
-                }
+                // Configure the SDK with the new settings, defaulting to true if null
+                SDKConfig.shouldShowOrderAmount(showOrderAmount ?: true)
+                SDKConfig.shouldShowCancelAlert(showCancelAlert ?: true)
 
                 val links = (orderDetails["_links"] as? HashMap<String, Any>)
                     ?: throw Exception("_links not found in orderDetails")

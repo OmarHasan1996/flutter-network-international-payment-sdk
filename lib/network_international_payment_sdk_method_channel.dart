@@ -13,10 +13,16 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
   Future<Map<dynamic, dynamic>?> startCardPayment({
     required Map<String, dynamic> orderDetails,
     String? merchantId,
+    bool? showOrderAmount,
+    bool? showCancelAlert,
+    Map<String, dynamic>? theme,
   }) async {
     final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startCardPayment', {
       'orderDetails': orderDetails,
       'merchantId': merchantId,
+      'showOrderAmount': showOrderAmount,
+      'showCancelAlert': showCancelAlert,
+      'theme': theme,
     });
     return result;
   }

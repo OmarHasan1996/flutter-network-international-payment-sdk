@@ -3,6 +3,7 @@ import 'package:network_international_payment_sdk/network_international_payment_
 import 'package:network_international_payment_sdk/network_international_payment_sdk_platform_interface.dart';
 import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
+import 'package:network_international_payment_sdk/theme.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 // 1. A mock implementation of the platform interface.
@@ -16,6 +17,10 @@ class MockNetworkInternationalPaymentSdkPlatform
   Future<Map?> startCardPayment({
     required Map<String, dynamic> orderDetails,
     String? merchantId,
+    bool? showOrderAmount,
+    bool? showCancelAlert,
+    Map<String, dynamic>? theme,
+
   }) async {
     // 3. We check that the correct parameters are passed from the public-facing method.
     expect(merchantId, 'test_merchant');

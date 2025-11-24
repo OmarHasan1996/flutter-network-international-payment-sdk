@@ -54,27 +54,6 @@ After adding the source, run `pod install` in your `ios` directory.
 
 ---
 
-## 🔄 Handling the Payment Response
-
-The plugin returns a `PaymentResult` object, which contains a `status` (a `PaymentStatus` enum) and an optional `reason` string.
-
-### `PaymentStatus` Enum Values
-
-| Status | Description |
-|---|---|
-| `SUCCESS` | The payment was successful (Android & iOS). |
-| `FAILED` | The payment failed. Check the `reason` for more details. |
-| `CANCELLED` | The user cancelled the payment flow. |
-| `AUTHORISED` | (Android Only) The payment was authorized. |
-| `POST_AUTH_REVIEW` | (Android Only) The payment is under review after authorization. |
-| `PARTIALLY_AUTHORISED`| (Android Only) The payment was partially authorized. |
-| `PARTIAL_AUTH_DECLINED`| (Android Only) The partial authorization was declined. |
-| `PARTIAL_AUTH_DECLINE_FAILED`| (Android Only) The partial authorization decline failed. |
-| `UNKNOWN` | An unknown status was received. |
-
-
----
-
 ## 🚀 How to Use
 
 ### 1. Get the Order Details JSON
@@ -109,7 +88,7 @@ Future<void> makePayment() async {
       orderDetails: orderDetails, 
     );
 
-    if (result.status == PaymentStatus.SUCCESS || result.status == PaymentStatus.AUTHORISED) {
+    if (result.status == PaymentStatus.success || result.status == PaymentStatus.authorised) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Transaction Successful")));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Transaction Failed: ${result.status} - ${result.reason}")));
@@ -133,6 +112,84 @@ final PaymentResult result = await paymentSdk.startCardPayment(
   base64orderData: base64EncodedOrder,
 );
 ```
+
+### 🎨 UI Customization
+
+You can customize the native payment UI by passing the following optional parameters to `startCardPayment`:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `showOrderAmount`| `bool?` | Show/hide the order amount on the pay button. Defaults to `true`. |
+| `showCancelAlert`| `bool?` | Show/hide a confirmation alert when the user cancels. Defaults to `true`. |
+| `theme` | `NITheme?` | Platform-specific UI color customizations. |
+
+#### iOS Color Customization
+
+For iOS, you can customize colors dynamically by passing an `NIThemeIOS` object to the `theme` parameter. Colors should be provided as hex strings (e.g., `"#RRGGBB"`).
+
+```dart
+import 'package:network_international_payment_sdk/theme.dart';
+
+// ...
+
+await paymentSdk.startCardPayment(
+  // ... other parameters
+  theme: NITheme(
+    ios: NIThemeIOS(
+      payButtonBackgroundColor: "#000000", // Black
+      payButtonTitleColor: "#FFFFFF",      // White
+      // ... and any other iOS color properties
+    ),
+  ),
+);
+```
+
+#### Android Color Customization
+
+For Android, colors must be customized statically by overriding the color resources in your app's `android/app/src/main/res/values/colors.xml` file. You cannot change them at runtime.
+
+Create the `colors.xml` file if it doesn't exist and add the colors you wish to override. For example:
+
+```xml
+<!-- android/app/src/main/res/values/colors.xml -->
+<resources>
+    <color name="payment_sdk_toolbar_color">#000000</color>
+    <color name="payment_sdk_pay_button_background_color">#4885ED</color>
+</resources>
+```
+
+**Available Android Color Resources:**
+* `payment_sdk_toolbar_color`
+* `payment_sdk_toolbar_text_color`
+* `payment_sdk_toolbar_icon_color`
+* `payment_sdk_pay_button_background_color`
+* `payment_sdk_pay_button_text_color`
+* `payment_sdk_progress_loader_color`
+* `payment_sdk_card_center_color`
+* `payment_sdk_floating_hint_color`
+
+---
+
+## 🔄 Handling the Payment Response
+
+The plugin returns a `PaymentResult` object, which contains a `status` (a `PaymentStatus` enum) and an optional `reason` string.
+
+### `PaymentStatus` Enum Values
+
+| Status | Description |
+|---|---|
+| `SUCCESS` | The payment was successful (Android & iOS). |
+| `FAILED` | The payment failed. Check the `reason` for more details. |
+| `CANCELLED` | The user cancelled the payment flow. |
+| `AUTHORISED` | (Android Only) The payment was authorized. |
+| `POST_AUTH_REVIEW` | (Android Only) The payment is under review after authorization. |
+| `PARTIALLY_AUTHORISED`| (Android Only) The payment was partially authorized. |
+| `PARTIAL_AUTH_DECLINED`| (Android Only) The partial authorization was declined. |
+| `PARTIAL_AUTH_DECLINE_FAILED`| (Android Only) The partial authorization decline failed. |
+| `UNKNOWN` | An unknown status was received. |
+
+
+---
 
 ### Testing
 
