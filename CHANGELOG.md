@@ -1,3 +1,7 @@
+## 1.3.0
+
+* Added `startApplePay` method to support Apple Pay on iOS.
+
 ## 1.2.0
 
 * Added `startSavedCardPayment` method to support payments with saved cards.

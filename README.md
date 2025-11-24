@@ -110,18 +110,29 @@ final PaymentResult result = await paymentSdk.startSavedCardPayment(
 );
 ```
 
+### 4. Call `startApplePay` (for iOS Apple Pay)
+
+To initiate an Apple Pay payment, use the `startApplePay` method. You must provide an `applePayConfig` object with the details of the transaction.
+
+ ```dart
+final applePayConfig = PKPaymentRequest(
+  merchantIdentifier: 'YOUR_APPLE_PAY_MERCHANT_ID',
+  countryCode: 'AE',
+  currencyCode: 'AED',
+  paymentSummaryItems: [
+    PKPaymentSummaryItem(label: 'Test Item', amount: 10.0),
+  ],
+);
+
+final PaymentResult result = await paymentSdk.startApplePay(
+orderDetails: orderDetails,
+applePayConfig: applePayConfig,
+);
+ ```
+
 ### Using `base64orderData`
 
 As an alternative to passing the `orderDetails` map, you can provide a Base64-encoded string of the order details JSON for either payment method.
-
-```dart
-final String base64EncodedOrder = "eyJfX2lkIjoi..."
-
-final PaymentResult result = await paymentSdk.startCardPayment(
-  merchantId: "YOUR_MERCHANT_ID", // Can be null
-  base64orderData: base64EncodedOrder,
-);
-```
 
 ### 🎨 UI Customization
 
