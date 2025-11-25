@@ -1,6 +1,10 @@
+## 1.5.0
+
+* Android: Add Google Pay support.
+
 ## 1.4.0
 
-* Android: Migrate to modern `PaymentsLauncher` and `SavedCardPaymentLauncher` APIs"
+* Android: Migrate to modern `PaymentsLauncher` and `SavedCardPaymentLauncher` APIs.
 
 ## 1.3.0
 
