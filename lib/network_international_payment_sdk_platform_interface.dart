@@ -29,6 +29,7 @@ abstract class NetworkInternationalPaymentSdkPlatform extends PlatformInterface 
     bool? showOrderAmount,
     bool? showCancelAlert,
     Map<String, dynamic>? theme,
+    Map<String, dynamic>? googlePayConfig,
   }) {
     throw UnimplementedError('startCardPayment() has not been implemented.');
   }

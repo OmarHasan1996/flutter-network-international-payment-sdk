@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:network_international_payment_sdk/apple_pay_config.dart';
+import 'package:network_international_payment_sdk/google_pay_config.dart';
 import 'package:network_international_payment_sdk/network_international_payment_sdk_platform_interface.dart';
 import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
@@ -16,6 +17,7 @@ class NetworkInternationalPaymentSdk {
     bool? showOrderAmount,
     bool? showCancelAlert,
     NITheme? theme,
+    GooglePayConfig? googlePayConfig, // Add this for Android
   }) async {
     final finalOrderDetails = _prepareOrderDetails(orderDetails, base64orderData);
 
@@ -25,6 +27,7 @@ class NetworkInternationalPaymentSdk {
       showOrderAmount: showOrderAmount,
       showCancelAlert: showCancelAlert,
       theme: theme?.toMap(),
+      googlePayConfig: googlePayConfig?.toMap(),
     );
 
     if (resultMap == null) {

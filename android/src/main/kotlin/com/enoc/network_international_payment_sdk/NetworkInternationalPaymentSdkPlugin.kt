@@ -15,6 +15,8 @@ import payment.sdk.android.payments.PaymentsRequest
 import payment.sdk.android.payments.PaymentsResult
 import payment.sdk.android.savedCard.SavedCardPaymentLauncher
 import payment.sdk.android.savedCard.SavedCardPaymentRequest
+import payment.sdk.android.googlepay.GooglePayConfig
+
 
 class NetworkInternationalPaymentSdkPlugin:
     FlutterPlugin,
@@ -57,6 +59,8 @@ class NetworkInternationalPaymentSdkPlugin:
             SDKConfig.shouldShowOrderAmount(showOrderAmount ?: true)
             SDKConfig.shouldShowCancelAlert(showCancelAlert ?: true)
 
+            val googlePayConfigMap = call.argument<HashMap<String, Any>>("googlePayConfig")
+
             val links = (orderDetails["_links"] as? HashMap<String, Any>)
                 ?: throw Exception("_links not found in orderDetails")
 
@@ -67,11 +71,15 @@ class NetworkInternationalPaymentSdkPlugin:
                 ?: throw Exception("Payment URL not found in orderDetails")
 
             paymentsLauncher?.let { launcher ->
-                val request = PaymentsRequest.builder()
+                val requestBuilder = PaymentsRequest.builder()
                     .gatewayAuthorizationUrl(authUrl)
                     .payPageUrl(paymentUrl)
-                    .build()
-                launcher.launch(request)
+                
+                googlePayConfigMap?.let {
+                    requestBuilder.setGooglePayConfig(createGooglePayConfig(it))
+                }
+                
+                launcher.launch(requestBuilder.build())
             } ?: throw IllegalStateException("Plugin is not attached to a ComponentActivity or the launcher could not be initialized.")
 
         } catch (e: Exception) {
@@ -114,6 +122,41 @@ class NetworkInternationalPaymentSdkPlugin:
             pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
             pendingResult = null
         }
+    }
+
+    private fun createGooglePayConfig(configMap: HashMap<String, Any>): GooglePayConfig {
+        val environmentStr = configMap["environment"] as? String ?: "test"
+        val merchantGatewayId = configMap["merchantGatewayId"] as? String
+            ?: throw IllegalArgumentException("merchantGatewayId is required for Google Pay")
+
+        val environment = if (environmentStr.equals("production", ignoreCase = true)) {
+            GooglePayConfig.Environment.Production
+        } else {
+            GooglePayConfig.Environment.Test
+        }
+
+        val billingAddressConfigMap = configMap["billingAddressConfig"] as? HashMap<String, Any>
+        val isRequired = billingAddressConfigMap?.get("isRequired") as? Boolean ?: false
+        val isPhoneNumberRequired = billingAddressConfigMap?.get("isPhoneNumberRequired") as? Boolean ?: false
+        val formatStr = billingAddressConfigMap?.get("format") as? String ?: "min"
+        val format = if (formatStr.equals("full", ignoreCase = true)) {
+            GooglePayConfig.Format.Full
+        } else {
+            GooglePayConfig.Format.Min
+        }
+        
+        val billingAddressConfig = GooglePayConfig.BillingAddressConfig(
+            isRequired,
+            format,
+            isPhoneNumberRequired
+        )
+        
+        return GooglePayConfig(
+            environment = environment,
+            merchantGatewayId = merchantGatewayId,
+            isEmailRequired = configMap["isEmailRequired"] as? Boolean ?: false,
+            billingAddressConfig = billingAddressConfig
+        )
     }
 
     private fun handlePaymentResult(paymentResult: PaymentsResult) {

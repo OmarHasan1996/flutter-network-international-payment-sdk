@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 import 'package:network_international_payment_sdk/apple_pay_config.dart';
+import 'package:network_international_payment_sdk/google_pay_config.dart';
 import 'package:network_international_payment_sdk/network_international_payment_sdk.dart';
 import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
@@ -24,11 +26,9 @@ class _MyAppState extends State<MyApp> {
   final _networkInternationalPaymentSdkPlugin = NetworkInternationalPaymentSdk();
 
 
-  Future<void> _startCardPayment() async {
+  Future<void> _startCardPayment({bool withGooglePay = false}) async {
     PaymentResult paymentResult;
     try {
-      var orderDetails = {'':''};
-      var orderDataBase64 = 'eyjfpe......=';
       var merchantId = '';
       final iosTheme = NIThemeIOS(
         cardPreviewColor: "#171618",
@@ -44,13 +44,22 @@ class _MyAppState extends State<MyApp> {
         payPageTitleColor: "#000000",
       );
 
+      final googlePayConfig = withGooglePay && Platform.isAndroid
+          ? GooglePayConfig(
+              environment: GooglePayEnvironment.test,
+              merchantGatewayId: 'YOUR_GOOGLE_PAY_GATEWAY_MERCHANT_ID', // Replace with your ID
+              isEmailRequired: false,
+              billingAddressConfig: BillingAddressConfig(isRequired: false, isPhoneNumberRequired: false)
+            )
+          : null;
+
       final result = await _networkInternationalPaymentSdkPlugin.startCardPayment(
-        // orderDetails: orderDetails,
         base64orderData: orderDataBase64,
         merchantId: merchantId,
         showOrderAmount: false,
         showCancelAlert: true,
-        theme: NITheme(ios: iosTheme)
+        theme: NITheme(ios: iosTheme),
+        googlePayConfig: googlePayConfig,
       );
       paymentResult = result;
     } on PlatformException catch (e) {
@@ -158,6 +167,10 @@ class _MyAppState extends State<MyApp> {
                     ElevatedButton(
                       onPressed: _startCardPayment,
                       child: const Text('Start card Payment'),
+                    ),
+                     ElevatedButton(
+                      onPressed: ()=>_startCardPayment(withGooglePay: true),
+                      child: const Text('Start card Payment with Google Pay'),
                     ),
                     ElevatedButton(
                       onPressed: _startSavedCardPayment,

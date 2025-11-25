@@ -63,78 +63,62 @@ For security reasons, you must call the N-Genius APIs from your server to create
 - **Step 1: Get an Access Token:** [Request an Access Token](https://docs.ngenius-payments.com/reference/request-an-access-token-direct)
 - **Step 2: Create an Order:** [Create an Order API](https://docs.ngenius-payments.com/reference/two-stage-payments-orders)
 
-### 2. Call `startCardPayment` (for new cards)
+### 2. Call a Payment Method
 
-Pass the `orderDetails` map to the `startCardPayment` method. The `merchantId` is optional.
+#### `startCardPayment` (for new cards)
+
+This method is used for payments with a new card. It also supports enabling Google Pay on Android.
 
 ```dart
-import 'package:network_international_payment_sdk/network_international_payment_sdk.dart';
-import 'package:network_international_payment_sdk/payment_result.dart';
-import 'package:network_international_payment_sdk/payment_status.dart';
-// ...
+final PaymentResult result = await paymentSdk.startCardPayment(
+  merchantId: "YOUR_MERCHANT_ID", // Required for Android
+  orderDetails: orderDetails,
+  googlePayConfig: GooglePayConfig( // Optional: to enable Google Pay
+    merchantGatewayId: 'YOUR_GOOGLE_PAY_GATEWAY_ID',
+  ),
+);
+```
 
-Future<void> makePayment() async {
-  final paymentSdk = NetworkInternationalPaymentSdk();
+#### `startSavedCardPayment` (for saved cards)
 
-  // This must be fetched from your server.
-  final Map<String, dynamic> orderDetails = await getOrderDetailsFromServer();
-
-  try {
-    final PaymentResult result = await paymentSdk.startCardPayment(
-      // The merchantId is optional and primarily used for specific Android payment flows.
-      merchantId: "YOUR_MERCHANT_ID", // Can be null
-      
-      // The map containing the JSON data from your server.
-      orderDetails: orderDetails, 
-    );
-
-    if (result.status == PaymentStatus.success || result.status == PaymentStatus.authorised) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Transaction Successful")));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Transaction Failed: ${result.status} - ${result.reason}")));
-    }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("An error occurred: $e")));
-  }
-}
-
-### 3. Call `startSavedCardPayment` (for saved cards)
-
-For saved card payments, use the `startSavedCardPayment` method and optionally provide the user's CVV.
+For saved card payments, use the `startSavedCardPayment` method and optionally provide the user's CVV if required by your order configuration.
 
 ```dart
 final PaymentResult result = await paymentSdk.startSavedCardPayment(
-  merchantId: "YOUR_MERCHANT_ID", // Optional
+  merchantId: "YOUR_MERCHANT_ID", // Required for Android
   orderDetails: orderDetails, 
   cvv: "123", // Optional
 );
 ```
 
-### 4. Call `startApplePay` (for iOS Apple Pay)
+#### `startApplePay` (iOS Only)
 
-To initiate an Apple Pay payment, use the `startApplePay` method. You must provide an `applePayConfig` object with the details of the transaction.
+This method initiates a payment with Apple Pay. You must provide a `PKPaymentRequest` object.
 
- ```dart
+```dart
+import 'package:network_international_payment_sdk/apple_pay_config.dart';
+
+// ...
+
 final applePayConfig = PKPaymentRequest(
   merchantIdentifier: 'YOUR_APPLE_PAY_MERCHANT_ID',
-  countryCode: 'AE',
-  currencyCode: 'AED',
   paymentSummaryItems: [
-    PKPaymentSummaryItem(label: 'Test Item', amount: 10.0),
+    PKPaymentSummaryItem(label: 'Your Product', amount: 100.0),
   ],
 );
 
 final PaymentResult result = await paymentSdk.startApplePay(
-orderDetails: orderDetails,
-applePayConfig: applePayConfig,
+  orderDetails: orderDetails, 
+  applePayConfig: applePayConfig,
 );
  ```
 
 ### Using `base64orderData`
 
 As an alternative to passing the `orderDetails` map, you can provide a Base64-encoded string of the order details JSON for either payment method.
+---
 
-### 🎨 UI Customization
+### 🎨 UI Customization & Other Options
 
 You can customize the native payment UI by passing the following optional parameters to `startCardPayment`:
 

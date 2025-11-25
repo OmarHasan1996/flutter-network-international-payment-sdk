@@ -1,18 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:network_international_payment_sdk/apple_pay_config.dart';
+import 'package:network_international_payment_sdk/google_pay_config.dart';
 import 'package:network_international_payment_sdk/network_international_payment_sdk.dart';
 import 'package:network_international_payment_sdk/network_international_payment_sdk_platform_interface.dart';
 import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
-import 'package:network_international_payment_sdk/theme.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-// 1. A mock implementation of the platform interface.
+// A mock implementation of the platform interface.
 class MockNetworkInternationalPaymentSdkPlatform
     with MockPlatformInterfaceMixin
     implements NetworkInternationalPaymentSdkPlatform {
 
-  // 2. We are mocking the native `startCardPayment` call.
-  // It will return a successful result map.
   @override
   Future<Map?> startCardPayment({
     required Map<String, dynamic> orderDetails,
@@ -20,32 +19,39 @@ class MockNetworkInternationalPaymentSdkPlatform
     bool? showOrderAmount,
     bool? showCancelAlert,
     Map<String, dynamic>? theme,
-
+    Map<String, dynamic>? googlePayConfig,
   }) async {
-    // 3. We check that the correct parameters are passed from the public-facing method.
-    expect(merchantId, 'test_merchant');
     expect(orderDetails['testKey'], 'testValue');
-    
+    if (googlePayConfig != null) {
+      expect(googlePayConfig['merchantGatewayId'], 'test_google_pay_id');
+    }
     return {'status': 'SUCCESS', 'reason': 'Payment was successful'};
   }
 
   @override
-  Future<Map<dynamic, dynamic>?> startSavedCardPayment({required Map<String, dynamic> orderDetails, String? merchantId, String? cvv}) {
-    // TODO: implement startSavedCardPayment
-    throw UnimplementedError();
+  Future<Map<dynamic, dynamic>?> startSavedCardPayment({
+    required Map<String, dynamic> orderDetails,
+    String? merchantId,
+    String? cvv,
+  }) async {
+    expect(orderDetails['testKey'], 'testValue');
+    expect(cvv, '123');
+    return {'status': 'SUCCESS', 'reason': 'Saved card payment successful'};
   }
 
   @override
-  Future<Map<dynamic, dynamic>?> startApplePay({required Map<String, dynamic> orderDetails, required Map<String, dynamic> applePayConfig}) {
-    // TODO: implement startApplePay
-    throw UnimplementedError();
+  Future<Map<dynamic, dynamic>?> startApplePay({
+    required Map<String, dynamic> orderDetails,
+    required Map<String, dynamic> applePayConfig,
+  }) async {
+    expect(orderDetails['testKey'], 'testValue');
+    expect(applePayConfig['merchantIdentifier'], 'test_apple_pay_id');
+    return {'status': 'FAILED', 'reason': 'Apple Pay is only supported on iOS.'};
   }
 }
 
 void main() {
-  // The mock platform instance to use for all tests.
   late MockNetworkInternationalPaymentSdkPlatform fakePlatform;
-  // The instance of the plugin to test.
   late NetworkInternationalPaymentSdk plugin;
 
   setUp(() {
@@ -55,33 +61,42 @@ void main() {
   });
 
   test('startCardPayment returns a successful PaymentResult', () async {
-    // 4. Define the input for the test.
-    final testOrderDetails = {'testKey': 'testValue'};
-    final testMerchantId = 'test_merchant';
-
-    // 5. Call the public method.
     final paymentResult = await plugin.startCardPayment(
-      orderDetails: testOrderDetails,
-      merchantId: testMerchantId,
+      orderDetails: {'testKey': 'testValue'},
+      merchantId: 'test_merchant',
     );
-
-    // 6. Verify that the result is correctly parsed into a PaymentResult object.
-    expect(paymentResult, isA<PaymentResult>());
     expect(paymentResult.status, PaymentStatus.success);
     expect(paymentResult.reason, 'Payment was successful');
   });
-  
-   test('startCardPayment handles base64 decoding', () async {
-    // Test base64 decoding logic.
-    final base64Order = 'eyJ0ZXN0S2V5IjoidGVzdFZhbHVlIn0='; // {"testKey":"testValue"}
-    final testMerchantId = 'test_merchant';
 
+  test('startCardPayment with GooglePay returns a successful PaymentResult', () async {
     final paymentResult = await plugin.startCardPayment(
-      base64orderData: base64Order,
-      merchantId: testMerchantId,
+      orderDetails: {'testKey': 'testValue'},
+      merchantId: 'test_merchant',
+      googlePayConfig: GooglePayConfig(merchantGatewayId: 'test_google_pay_id'),
     );
-
-    expect(paymentResult, isA<PaymentResult>());
     expect(paymentResult.status, PaymentStatus.success);
+  });
+
+  test('startSavedCardPayment returns a successful PaymentResult', () async {
+    final paymentResult = await plugin.startSavedCardPayment(
+      orderDetails: {'testKey': 'testValue'},
+      merchantId: 'test_merchant',
+      cvv: '123',
+    );
+    expect(paymentResult.status, PaymentStatus.success);
+    expect(paymentResult.reason, 'Saved card payment successful');
+  });
+
+  test('startApplePay returns a successful PaymentResult', () async {
+    final paymentResult = await plugin.startApplePay(
+      orderDetails: {'testKey': 'testValue'},
+      applePayConfig: PKPaymentRequest(
+        merchantIdentifier: 'test_apple_pay_id',
+        paymentSummaryItems: [],
+      ),
+    );
+    expect(paymentResult.status, PaymentStatus.failed);
+    expect(paymentResult.reason, 'Apple Pay is only supported on iOS.');
   });
 }

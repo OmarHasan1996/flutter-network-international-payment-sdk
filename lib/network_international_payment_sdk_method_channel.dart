@@ -16,6 +16,7 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
     bool? showOrderAmount,
     bool? showCancelAlert,
     Map<String, dynamic>? theme,
+    Map<String, dynamic>? googlePayConfig,
   }) async {
     final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startCardPayment', {
       'orderDetails': orderDetails,
