@@ -1,7 +1,7 @@
 package com.enoc.network_international_payment_sdk
 
 import android.app.Activity
-import android.content.Intent
+import androidx.activity.ComponentActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -9,25 +9,24 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry
-import payment.sdk.android.PaymentClient
-import payment.sdk.android.cardpayment.CardPaymentData
-import payment.sdk.android.cardpayment.CardPaymentRequest
-import payment.sdk.android.core.SDKConfig
+import payment.sdk.android.SDKConfig
+import payment.sdk.android.payments.PaymentsLauncher
+import payment.sdk.android.payments.PaymentsRequest
+import payment.sdk.android.payments.PaymentsResult
+import payment.sdk.android.savedCard.SavedCardPaymentLauncher
+import payment.sdk.android.savedCard.SavedCardPaymentRequest
 
 class NetworkInternationalPaymentSdkPlugin:
     FlutterPlugin,
     MethodCallHandler,
-    ActivityAware,
-    PluginRegistry.ActivityResultListener {
+    ActivityAware {
 
     private lateinit var channel: MethodChannel
     private var activity: Activity? = null
     private var pendingResult: Result? = null
-
-    companion object {
-        private const val CARD_PAYMENT_REQUEST_CODE = 777
-    }
+    
+    private var paymentsLauncher: PaymentsLauncher? = null
+    private var savedCardPaymentLauncher: SavedCardPaymentLauncher? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "network_international_payment_sdk")
@@ -52,9 +51,7 @@ class NetworkInternationalPaymentSdkPlugin:
 
             val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
                 ?: throw IllegalArgumentException("orderDetails is required")
-            val merchantId = call.argument<String>("merchantId")
             
-            // UI flags
             val showOrderAmount = call.argument<Boolean>("showOrderAmount")
             val showCancelAlert = call.argument<Boolean>("showCancelAlert")
             SDKConfig.shouldShowOrderAmount(showOrderAmount ?: true)
@@ -69,19 +66,13 @@ class NetworkInternationalPaymentSdkPlugin:
             val paymentUrl = ((links["payment"] as? HashMap<String, Any>)?.get("href") as? String)
                 ?: throw Exception("Payment URL not found in orderDetails")
 
-            val code = paymentUrl.substringAfter("code=").takeIf { it.isNotEmpty() }
-                ?: throw Exception("Code not found or is empty in payment URL")
-
-            activity?.let { currentActivity ->
-                val paymentClient = PaymentClient(currentActivity, merchantId)
-                paymentClient.launchCardPayment(
-                    CardPaymentRequest.Builder()
-                        .gatewayUrl(authUrl)
-                        .code(code)
-                        .build(),
-                    CARD_PAYMENT_REQUEST_CODE
-                )
-            } ?: throw IllegalStateException("Plugin is not attached to a valid activity")
+            paymentsLauncher?.let { launcher ->
+                val request = PaymentsRequest.builder()
+                    .gatewayAuthorizationUrl(authUrl)
+                    .payPageUrl(paymentUrl)
+                    .build()
+                launcher.launch(request)
+            } ?: throw IllegalStateException("Plugin is not attached to a ComponentActivity or the launcher could not be initialized.")
 
         } catch (e: Exception) {
             pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
@@ -99,13 +90,25 @@ class NetworkInternationalPaymentSdkPlugin:
 
             val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
                 ?: throw IllegalArgumentException("orderDetails is required")
-            val serviceId = call.argument<String>("merchantId") // Using merchantId as serviceId
             val cvv = call.argument<String>("cvv")
 
-             activity?.let { currentActivity ->
-                val paymentClient = PaymentClient(currentActivity, serviceId)
-                paymentClient.launchSavedCardPayment(order = orderDetails, cvv = cvv, code = CARD_PAYMENT_REQUEST_CODE)
-             } ?: throw IllegalStateException("Plugin is not attached to a valid activity")
+            val links = (orderDetails["_links"] as? HashMap<String, Any>)
+                ?: throw Exception("_links not found in orderDetails")
+
+            val authUrl = ((links["payment-authorization"] as? HashMap<String, Any>)?.get("href") as? String)
+                ?: throw Exception("Authorization URL not found in orderDetails")
+
+            val paymentUrl = ((links["payment"] as? HashMap<String, Any>)?.get("href") as? String)
+                ?: throw Exception("Payment URL not found in orderDetails")
+
+            savedCardPaymentLauncher?.let { launcher ->
+                val request = SavedCardPaymentRequest.builder()
+                    .gatewayAuthorizationUrl(authUrl)
+                    .payPageUrl(paymentUrl)
+                    .apply { cvv?.let { setCvv(it) } }
+                    .build()
+                launcher.launch(request)
+            } ?: throw IllegalStateException("Plugin is not attached to a ComponentActivity or the launcher could not be initialized.")
 
         } catch (e: Exception) {
             pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
@@ -113,43 +116,26 @@ class NetworkInternationalPaymentSdkPlugin:
         }
     }
 
-    private fun toPaymentResultMap(data: CardPaymentData?): Map<String, String?> {
-        if (data == null) {
-            return mapOf("status" to "ERROR", "reason" to "CardPaymentData was null")
-        }
-        val reason = data.reason.orEmpty()
-        val status = when (data.code) {
-            CardPaymentData.STATUS_PAYMENT_AUTHORIZED -> "AUTHORISED"
-            CardPaymentData.STATUS_PAYMENT_PURCHASED, CardPaymentData.STATUS_PAYMENT_CAPTURED -> "SUCCESS"
-            CardPaymentData.STATUS_POST_AUTH_REVIEW -> "POST_AUTH_REVIEW"
-            CardPaymentData.STATUS_PARTIAL_AUTH_DECLINED -> "PARTIAL_AUTH_DECLINED"
-            CardPaymentData.STATUS_PARTIAL_AUTH_DECLINE_FAILED -> "PARTIAL_AUTH_DECLINE_FAILED"
-            CardPaymentData.STATUS_PARTIALLY_AUTHORISED -> "PARTIALLY_AUTHORISED"
-            CardPaymentData.STATUS_PAYMENT_FAILED -> "FAILED"
-            else -> "UNKNOWN"
-        }
-        return mapOf("status" to status, "reason" to reason)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        if (requestCode != CARD_PAYMENT_REQUEST_CODE) {
-            return false
-        }
-
+    private fun handlePaymentResult(paymentResult: PaymentsResult) {
         val result = pendingResult
         pendingResult = null
-        if (result == null) {
-            return true // Result already handled or lost
+        if (result == null) return
+
+        val resultMap = when (paymentResult) {
+            is PaymentsResult.Success -> mapOf("status" to "SUCCESS", "reason" to "Payment was successful")
+            is PaymentsResult.Authorised -> mapOf("status" to "AUTHORISED", "reason" to "Payment was authorised")
+            is PaymentsResult.Failed -> mapOf("status" to "FAILED", "reason" to paymentResult.error)
+            is PaymentsResult.Cancelled -> mapOf("status" to "CANCELLED", "reason" to "Payment was cancelled by the user")
+            is PaymentsResult.PostAuthReview -> mapOf("status" to "POST_AUTH_REVIEW", "reason" to "Payment requires post-authorization review")
+            is PaymentsResult.PartialAuthDeclined -> mapOf("status" to "PARTIAL_AUTH_DECLINED", "reason" to "Partial authorization was declined")
+            is PaymentsResult.PartialAuthDeclineFailed -> mapOf("status" to "PARTIAL_AUTH_DECLINE_FAILED", "reason" to "Partial authorization decline failed")
+            is PaymentsResult.PartiallyAuthorised -> mapOf("status" to "PARTIALLY_AUTHORISED", "reason" to "Payment was partially authorised")
+            else -> mapOf("status" to "UNKNOWN", "reason" to "An unknown payment status was received")
         }
 
-        if (resultCode == Activity.RESULT_OK && data != null) {
-            val cardPaymentData = CardPaymentData.getFromIntent(data)
-            result.success(toPaymentResultMap(cardPaymentData))
-        } else {
-            result.success(mapOf("status" to "CANCELLED", "reason" to "Payment was cancelled by the user"))
+        activity?.runOnUiThread {
+            result.success(resultMap)
         }
-
-        return true
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -158,19 +144,29 @@ class NetworkInternationalPaymentSdkPlugin:
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
-        binding.addActivityResultListener(this)
+        (binding.activity as? ComponentActivity)?.let {
+            paymentsLauncher = PaymentsLauncher(it, ::handlePaymentResult)
+            savedCardPaymentLauncher = SavedCardPaymentLauncher(it, ::handlePaymentResult)
+        }
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
         activity = null
+        paymentsLauncher = null
+        savedCardPaymentLauncher = null
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
-        binding.addActivityResultListener(this)
+        (binding.activity as? ComponentActivity)?.let {
+            paymentsLauncher = PaymentsLauncher(it, ::handlePaymentResult)
+            savedCardPaymentLauncher = SavedCardPaymentLauncher(it, ::handlePaymentResult)
+        }
     }
 
     override fun onDetachedFromActivity() {
         activity = null
+        paymentsLauncher = null
+        savedCardPaymentLauncher = null
     }
 }
