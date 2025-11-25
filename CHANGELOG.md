@@ -1,3 +1,7 @@
+## 1.4.0
+
+* Android: Migrate to modern `PaymentsLauncher` and `SavedCardPaymentLauncher` APIs"
+
 ## 1.3.0
 
 * Added `startApplePay` method to support Apple Pay on iOS.
