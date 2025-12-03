@@ -10,13 +10,16 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import payment.sdk.android.SDKConfig
+import payment.sdk.android.core.Order
+import payment.sdk.android.googlepay.GooglePayConfig
 import payment.sdk.android.payments.PaymentsLauncher
 import payment.sdk.android.payments.PaymentsRequest
 import payment.sdk.android.payments.PaymentsResult
+import payment.sdk.android.samsungpay.SamsungPayClient
+import payment.sdk.android.samsungpay.SamsungPayResponse
 import payment.sdk.android.savedCard.SavedCardPaymentLauncher
 import payment.sdk.android.savedCard.SavedCardPaymentRequest
-import payment.sdk.android.googlepay.GooglePayConfig
-
+import payment.sdk.android.core.api.CoroutinesGatewayHttpClient
 
 class NetworkInternationalPaymentSdkPlugin:
     FlutterPlugin,
@@ -39,6 +42,7 @@ class NetworkInternationalPaymentSdkPlugin:
         when (call.method) {
             "startCardPayment" -> handleNewCardPayment(call, result)
             "startSavedCardPayment" -> handleSavedCardPayment(call, result)
+            "startSamsungPay" -> handleSamsungPayPayment(call, result)
             else -> result.notImplemented()
         }
     }
@@ -124,6 +128,74 @@ class NetworkInternationalPaymentSdkPlugin:
         }
     }
 
+    private fun handleSamsungPayPayment(call: MethodCall, result: Result) {
+        try {
+            if (pendingResult != null) {
+                result.error("ALREADY_ACTIVE", "A payment is already in progress.", null)
+                return
+            }
+            pendingResult = result
+
+            val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
+                ?: throw IllegalArgumentException("orderDetails is required")
+            val samsungPayConfig = call.argument<HashMap<String, Any>>("samsungPayConfig")
+                ?: throw IllegalArgumentException("samsungPayConfig is required")
+
+            val serviceId = samsungPayConfig["serviceId"] as? String
+                ?: throw IllegalArgumentException("serviceId is required for Samsung Pay")
+            val merchantName = samsungPayConfig["merchantName"] as? String
+                ?: throw IllegalArgumentException("merchantName is required for Samsung Pay")
+
+            activity?.let { currentActivity ->
+                // SamsungPayClient must be instantiated here with the activity context
+                val samsungPayClient = SamsungPayClient(currentActivity, serviceId, CoroutinesGatewayHttpClient())
+
+                samsungPayClient.isSamsungPayAvailable(object : com.samsung.android.sdk.samsungpay.v2.StatusListener {
+                    override fun onSuccess(status: Int, bundle: android.os.Bundle?) {
+                        if (status == com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_READY) {
+                            val order = createOrder(from = orderDetails)
+                            samsungPayClient.startSamsungPay(order, merchantName, object : SamsungPayResponse {
+                                override fun onSuccess() {
+                                    val successResult = mapOf("status" to "SUCCESS", "reason" to "Samsung Pay payment successful")
+                                    activity?.runOnUiThread {
+                                        pendingResult?.success(successResult)
+                                        pendingResult = null
+                                    }
+                                }
+
+                                override fun onFailure(error: String) {
+                                    val error1 = mapOf("status" to "FAILED", "reason" to error)
+                                    activity?.runOnUiThread {
+                                        pendingResult?.success(error1)
+                                        pendingResult = null
+                                    }
+                                }
+                            })
+                        } else {
+                            val error = mapOf("status" to "FAILED", "reason" to "Samsung Pay is not available on this device.")
+                            activity?.runOnUiThread {
+                                pendingResult?.success(error)
+                                pendingResult = null
+                            }
+                        }
+                    }
+
+                    override fun onFail(errCode: Int, bundle: android.os.Bundle?) {
+                        val error = mapOf("status" to "FAILED", "reason" to "Samsung Pay status check failed with code: $errCode")
+                        activity?.runOnUiThread {
+                            pendingResult?.success(error)
+                            pendingResult = null
+                        }
+                    }
+                })
+            } ?: throw IllegalStateException("Plugin is not attached to a valid activity")
+
+        } catch (e: Exception) {
+            pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
+            pendingResult = null
+        }
+    }
+
     private fun createGooglePayConfig(configMap: HashMap<String, Any>): GooglePayConfig {
         val environmentStr = configMap["environment"] as? String ?: "test"
         val merchantGatewayId = configMap["merchantGatewayId"] as? String
@@ -157,6 +229,33 @@ class NetworkInternationalPaymentSdkPlugin:
             isEmailRequired = configMap["isEmailRequired"] as? Boolean ?: false,
             billingAddressConfig = billingAddressConfig
         )
+    }
+
+    private fun createOrder(from: HashMap<String, Any>): Order {
+        val order = Order()
+        (from["reference"] as? String)?.let { order.reference = it }
+        (from["outletId"] as? String)?.let { order.outletId = it }
+        (from["amount"] as? HashMap<String, Any>)?.let {
+            val amount = Order.Amount()
+            amount.value = it["value"] as? Double
+            amount.currencyCode = it["currencyCode"] as? String
+            order.amount = amount
+        }
+        (from["_links"] as? HashMap<String, Any>)?.let {
+            val links = Order.Links()
+            (it["payment-authorization"] as? HashMap<String, String>)?.let {
+                val href = Order.Href()
+                href.href = it["href"]
+                links.paymentAuthorizationUrl = href
+            }
+            (it["payment"] as? HashMap<String, String>)?.let {
+                val href = Order.Href()
+                href.href = it["href"]
+                links.paymentUrl = href
+            }
+            order.links = links
+        }
+        return order
     }
 
     private fun handlePaymentResult(paymentResult: PaymentsResult) {
