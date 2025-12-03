@@ -24,6 +24,7 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
       'showOrderAmount': showOrderAmount,
       'showCancelAlert': showCancelAlert,
       'theme': theme,
+      'googlePayConfig': googlePayConfig,
     });
     return result;
   }
