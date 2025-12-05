@@ -10,6 +10,7 @@ A Flutter plugin to provide an easy-to-use integration for handling payments usi
 
 ## ⚙️ Android Configuration
 
+### 1. Add JitPack Repository
 Since the N-Genius Android SDK is a JitPack dependency, you must add the JitPack repository to your project-level `android/build.gradle` or `android/build.gradle.kts` file.
 
 #### For Groovy DSL (`build.gradle`)
@@ -36,7 +37,47 @@ allprojects {
 }
 ```
 
----
+### 2. Update AndroidManifest.xml
+
+To support #Samsung Pay, you must add the following `<queries>` and `<meta-data>` tags to your `android/app/src/main/AndroidManifest.xml` file. 
+
+```xml
+<manifest ...>
+    <queries>
+        <package android:name="com.samsung.android.spay" />
+        <package android:name="com.samsung.android.samsungpay.gear" /> 
+    </queries>
+
+    <application ...>
+        <!-- Samsung Pay SDK API Level -->
+        <meta-data
+            android:name="spay_sdk_api_level"
+            android:value="2.18" />
+        
+        <!-- Set to 'Y' for testing, 'N' for release -->
+        <meta-data
+            android:name="debug_mode"
+            android:value="Y" /> 
+
+        <!-- Replace with your key from the Samsung Pay Developers portal -->
+        <meta-data
+            android:name="spay_debug_api_key"
+            android:value="YOUR_SPAY_DEBUG_API_KEY" />
+        
+        <!-- ... other activity and meta-data ... -->
+    </application>
+</manifest>
+```
+
+### 3. ProGuard Rules (if applicable)
+This also related to #Samsung Pay
+If you use ProGuard, add the following rules to your `proguard-rules.pro` file:
+
+```
+-dontwarn com.samsung.android.sdk.samsungpay.** 
+-keep class com.samsung.android.sdk.** { *; } 
+-keep interface com.samsung.android.sdk.** { *; }
+```
 
 ## 🍏 iOS Configuration
 
@@ -56,7 +97,7 @@ After adding the source, run `pod install` in your `ios` directory.
 
 ## 🚀 How to Use
 
-### 1. Get the Order Details JSON
+### 1. Get the Order Details
 
 For security reasons, you must call the N-Genius APIs from your server to create an order. This will give you the `orderDetails` JSON object required by the SDK.
 
@@ -65,14 +106,13 @@ For security reasons, you must call the N-Genius APIs from your server to create
 
 ### 2. Call a Payment Method
 
-#### `startCardPayment` (for new cards)
+#### `startCardPayment` (New Card)
+This method also supports enabling Google Pay on Android.
 
-This method is used for payments with a new card. It also supports enabling Google Pay on Android.
 
 ```dart
-final PaymentResult result = await paymentSdk.startCardPayment(
-  merchantId: "YOUR_MERCHANT_ID", // Required for Android
-  orderDetails: orderDetails,
+await _networkInternationalPaymentSdkPlugin.startCardPayment(
+  orderDetails: _orderDetails, //Map<String, dynamic>?
   googlePayConfig: GooglePayConfig( // Optional: to enable Google Pay
     merchantGatewayId: 'YOUR_GOOGLE_PAY_GATEWAY_ID',
   ),
@@ -84,9 +124,8 @@ final PaymentResult result = await paymentSdk.startCardPayment(
 For saved card payments, use the `startSavedCardPayment` method and optionally provide the user's CVV if required by your order configuration.
 
 ```dart
-final PaymentResult result = await paymentSdk.startSavedCardPayment(
-  merchantId: "YOUR_MERCHANT_ID", // Required for Android
-  orderDetails: orderDetails, 
+await _networkInternationalPaymentSdkPlugin.startSavedCardPayment(
+  orderDetails: _orderDetails, //Map<String, dynamic>?
   cvv: "123", // Optional
 );
 ```
@@ -103,7 +142,7 @@ import 'package:network_international_payment_sdk/apple_pay_config.dart';
 final applePayConfig = PKPaymentRequest(
   merchantIdentifier: 'YOUR_APPLE_PAY_MERCHANT_ID',
   paymentSummaryItems: [
-    PKPaymentSummaryItem(label: 'Your Product', amount: 100.0),
+    PKPaymentSummaryItem(label: 'Your Product', amount: 10.00),
   ],
 );
 
@@ -111,7 +150,24 @@ final PaymentResult result = await paymentSdk.startApplePay(
   orderDetails: orderDetails, 
   applePayConfig: applePayConfig,
 );
- ```
+```
+
+#### `startSamsungPay` (Android Only)
+
+```dart
+import 'package:network_international_payment_sdk/samsung_pay_config.dart';
+
+// ...
+final samsungPayConfig = SamsungPayConfig(
+  serviceId: 'YOUR_SAMSUNG_PAY_SERVICE_ID',
+  merchantName: 'Your Merchant Name',
+);
+
+await _networkInternationalPaymentSdkPlugin.startSamsungPay(
+  orderDetails: _orderDetails, //Map<String, dynamic>?
+  samsungPayConfig: samsungPayConfig,
+);
+```
 
 ### Using `base64orderData`
 

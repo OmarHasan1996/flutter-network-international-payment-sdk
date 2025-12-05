@@ -1,6 +1,6 @@
 name: network_international_payment_sdk
 description: "A Flutter plugin to provide an easy-to-use integration for handling payments using N-Genius native SDKs in Flutter applications."
-version: 1.5.0
+version: 1.6.0
 homepage: https://github.com/OmarHasan1996/flutter-network-international-payment-sdk
 repository: https://github.com/OmarHasan1996/flutter-network-international-payment-sdk
 

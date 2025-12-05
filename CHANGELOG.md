@@ -1,3 +1,7 @@
+## 1.6.0
+
+* Android: Add Samsung Pay support.
+
 ## 1.5.0
 
 * Android: Add Google Pay support.
@@ -8,7 +12,7 @@
 
 ## 1.3.0
 
-* Added `startApplePay` method to support Apple Pay on iOS.
+* IOS: Added `startApplePay` method to support Apple Pay on iOS.
 
 ## 1.2.0
 
