@@ -3,7 +3,6 @@ import 'package:network_international_payment_sdk/apple_pay_config.dart';
 import 'package:network_international_payment_sdk/google_pay_config.dart';
 import 'package:network_international_payment_sdk/network_international_payment_sdk.dart';
 import 'package:network_international_payment_sdk/network_international_payment_sdk_platform_interface.dart';
-import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -15,7 +14,6 @@ class MockNetworkInternationalPaymentSdkPlatform
   @override
   Future<Map?> startCardPayment({
     required Map<String, dynamic> orderDetails,
-    String? merchantId,
     bool? showOrderAmount,
     bool? showCancelAlert,
     Map<String, dynamic>? theme,
@@ -31,7 +29,6 @@ class MockNetworkInternationalPaymentSdkPlatform
   @override
   Future<Map<dynamic, dynamic>?> startSavedCardPayment({
     required Map<String, dynamic> orderDetails,
-    String? merchantId,
     String? cvv,
   }) async {
     expect(orderDetails['testKey'], 'testValue');
@@ -48,6 +45,12 @@ class MockNetworkInternationalPaymentSdkPlatform
     expect(applePayConfig['merchantIdentifier'], 'test_apple_pay_id');
     return {'status': 'FAILED', 'reason': 'Apple Pay is only supported on iOS.'};
   }
+
+  @override
+  Future<Map<dynamic, dynamic>?> startSamsungPay({required Map<String, dynamic> orderDetails, required Map<String, dynamic> samsungPayConfig}) {
+    // TODO: implement startSamsungPay
+    throw UnimplementedError();
+  }
 }
 
 void main() {
@@ -63,7 +66,6 @@ void main() {
   test('startCardPayment returns a successful PaymentResult', () async {
     final paymentResult = await plugin.startCardPayment(
       orderDetails: {'testKey': 'testValue'},
-      merchantId: 'test_merchant',
     );
     expect(paymentResult.status, PaymentStatus.success);
     expect(paymentResult.reason, 'Payment was successful');
@@ -72,7 +74,6 @@ void main() {
   test('startCardPayment with GooglePay returns a successful PaymentResult', () async {
     final paymentResult = await plugin.startCardPayment(
       orderDetails: {'testKey': 'testValue'},
-      merchantId: 'test_merchant',
       googlePayConfig: GooglePayConfig(merchantGatewayId: 'test_google_pay_id'),
     );
     expect(paymentResult.status, PaymentStatus.success);
@@ -81,7 +82,6 @@ void main() {
   test('startSavedCardPayment returns a successful PaymentResult', () async {
     final paymentResult = await plugin.startSavedCardPayment(
       orderDetails: {'testKey': 'testValue'},
-      merchantId: 'test_merchant',
       cvv: '123',
     );
     expect(paymentResult.status, PaymentStatus.success);

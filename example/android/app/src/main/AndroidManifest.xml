@@ -1,20 +1,27 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <queries>
+        <package android:name="com.samsung.android.spay" />
+        <package android:name="com.samsung.android.samsungpay.gear" /> 
+    </queries>
+
     <application
-        android:label="network_international_payment_sdk_example"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:theme="@style/SDKTheme"
-        android:enableOnBackInvokedCallback="true">
+        android:label="example">
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:taskAffinity=""
-            android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:exported="true"
             android:hardwareAccelerated="true"
+            android:launchMode="singleTop"
+            android:theme="@style/LaunchTheme"
             android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
             <meta-data
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
@@ -24,22 +31,25 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        
-        <activity
-            android:name="payment.sdk.android.payments.PaymentsActivity"
-            android:theme="@style/SDKTheme"
-            android:launchMode="standard"
-            android:taskAffinity=""
-            tools:replace="android:theme,android:launchMode,android:taskAffinity"/>
-
+        <!-- Don't delete the meta-data below. -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Samsung Pay SDK Configuration -->
+        <meta-data
+            android:name="spay_sdk_api_level"
+            android:value="2.18" />
+        
+        <!-- Set to 'Y' for testing, 'N' for release -->
+        <meta-data
+            android:name="debug_mode"
+            android:value="Y" />
+
+        <!-- Replace with your actual debug key from the Samsung Pay Developers portal -->
+        <meta-data
+            android:name="spay_debug_api_key"
+            android:value="YOUR_SPAY_DEBUG_API_KEY" />
+
     </application>
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
-        </intent>
-    </queries>
 </manifest>

@@ -12,7 +12,6 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
   @override
   Future<Map<dynamic, dynamic>?> startCardPayment({
     required Map<String, dynamic> orderDetails,
-    String? merchantId,
     bool? showOrderAmount,
     bool? showCancelAlert,
     Map<String, dynamic>? theme,
@@ -20,7 +19,6 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
   }) async {
     final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startCardPayment', {
       'orderDetails': orderDetails,
-      'merchantId': merchantId,
       'showOrderAmount': showOrderAmount,
       'showCancelAlert': showCancelAlert,
       'theme': theme,
@@ -32,12 +30,10 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
   @override
   Future<Map<dynamic, dynamic>?> startSavedCardPayment({
     required Map<String, dynamic> orderDetails,
-    String? merchantId,
     String? cvv,
   }) async {
     final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startSavedCardPayment', {
       'orderDetails': orderDetails,
-      'merchantId': merchantId,
       'cvv': cvv,
     });
     return result;
@@ -51,6 +47,18 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
     final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startApplePay', {
       'orderDetails': orderDetails,
       'applePayConfig': applePayConfig,
+    });
+    return result;
+  }
+
+  @override
+  Future<Map<dynamic, dynamic>?> startSamsungPay({
+    required Map<String, dynamic> orderDetails,
+    required Map<String, dynamic> samsungPayConfig,
+  }) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startSamsungPay', {
+      'orderDetails': orderDetails,
+      'samsungPayConfig': samsungPayConfig,
     });
     return result;
   }

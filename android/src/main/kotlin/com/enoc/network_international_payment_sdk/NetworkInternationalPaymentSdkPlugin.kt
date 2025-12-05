@@ -147,7 +147,6 @@ class NetworkInternationalPaymentSdkPlugin:
                 ?: throw IllegalArgumentException("merchantName is required for Samsung Pay")
 
             activity?.let { currentActivity ->
-                // SamsungPayClient must be instantiated here with the activity context
                 val samsungPayClient = SamsungPayClient(currentActivity, serviceId, CoroutinesGatewayHttpClient())
 
                 samsungPayClient.isSamsungPayAvailable(object : com.samsung.android.sdk.samsungpay.v2.StatusListener {
@@ -172,7 +171,12 @@ class NetworkInternationalPaymentSdkPlugin:
                                 }
                             })
                         } else {
-                            val error = mapOf("status" to "FAILED", "reason" to "Samsung Pay is not available on this device.")
+                            val reason = when (status) {
+                                com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_NOT_READY -> "Samsung Pay is installed but not set up. Please add a card."
+                                com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_NOT_SUPPORTED -> "This device does not support Samsung Pay."
+                                else -> "Samsung Pay is not available on this device. Status code: $status"
+                            }
+                            val error = mapOf("status" to "FAILED", "reason" to reason)
                             activity?.runOnUiThread {
                                 pendingResult?.success(error)
                                 pendingResult = null

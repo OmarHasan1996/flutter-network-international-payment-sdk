@@ -6,6 +6,7 @@ import 'package:network_international_payment_sdk/google_pay_config.dart';
 import 'package:network_international_payment_sdk/network_international_payment_sdk_platform_interface.dart';
 import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
+import 'package:network_international_payment_sdk/samsung_pay_config.dart';
 import 'package:network_international_payment_sdk/theme.dart';
 
 class NetworkInternationalPaymentSdk {
@@ -13,7 +14,6 @@ class NetworkInternationalPaymentSdk {
   Future<PaymentResult> startCardPayment({
     Map<String, dynamic>? orderDetails,
     String? base64orderData,
-    String? merchantId,
     bool? showOrderAmount,
     bool? showCancelAlert,
     NITheme? theme,
@@ -23,7 +23,6 @@ class NetworkInternationalPaymentSdk {
 
     final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startCardPayment(
       orderDetails: finalOrderDetails,
-      merchantId: merchantId,
       showOrderAmount: showOrderAmount,
       showCancelAlert: showCancelAlert,
       theme: theme?.toMap(),
@@ -41,14 +40,12 @@ class NetworkInternationalPaymentSdk {
   Future<PaymentResult> startSavedCardPayment({
     Map<String, dynamic>? orderDetails,
     String? base64orderData,
-    String? merchantId, // Used as serviceId on Android
     String? cvv, // Optional CVV
   }) async {
     final finalOrderDetails = _prepareOrderDetails(orderDetails, base64orderData);
 
     final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startSavedCardPayment(
       orderDetails: finalOrderDetails,
-      merchantId: merchantId,
       cvv: cvv,
     );
 
@@ -73,6 +70,29 @@ class NetworkInternationalPaymentSdk {
     final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startApplePay(
       orderDetails: finalOrderDetails,
       applePayConfig: applePayConfig.toMap(),
+    );
+
+    if (resultMap == null) {
+      return PaymentResult(PaymentStatus.unknown, "Did not receive a response from the native side.");
+    }
+
+    return PaymentResult.fromMap(resultMap);
+  }
+
+  /// (Android Only) Initiates a payment using Samsung Pay.
+  Future<PaymentResult> startSamsungPay({
+    Map<String, dynamic>? orderDetails,
+    String? base64orderData,
+    required SamsungPayConfig samsungPayConfig,
+  }) async {
+    if (!Platform.isAndroid) {
+      return PaymentResult(PaymentStatus.failed, "Samsung Pay is only supported on Android.");
+    }
+    final finalOrderDetails = _prepareOrderDetails(orderDetails, base64orderData);
+
+    final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startSamsungPay(
+      orderDetails: finalOrderDetails,
+      samsungPayConfig: samsungPayConfig.toMap(),
     );
 
     if (resultMap == null) {
