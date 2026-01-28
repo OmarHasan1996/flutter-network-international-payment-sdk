@@ -4,7 +4,7 @@ A Flutter plugin to provide an easy-to-use integration for handling payments usi
 
 ## 📱 Platform Compatibility
 - **Android** ✅
-- **iOS** ✅ (Minimum deployment target: iOS 12.0)
+- **iOS** ✅ (Minimum deployment target: iOS 14.0)
 
 ---
 

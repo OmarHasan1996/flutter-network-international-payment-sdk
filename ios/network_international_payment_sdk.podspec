@@ -4,14 +4,14 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'network_international_payment_sdk'
-  s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin.'
+  s.version          = '1.3.0'
+  s.summary          = 'Flutter plugin for Network International (N-Genius) Payment SDK integration.'
   s.description      = <<-DESC
-A new Flutter plugin.
+A Flutter plugin to provide an easy-to-use integration for handling payments using N-Genius native SDKs in Flutter applications, supporting New Cards, Saved Cards, Apple Pay, and Google Pay.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'https://github.com/OmarHasan1996/flutter-network-international-payment-sdk'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'Omar Hasan' => 'omar.suhail.hasan@gmail.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'

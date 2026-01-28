@@ -1,3 +1,7 @@
+## 1.6.1
+
+* IOS: Platform '14'.
+
 ## 1.6.0
 
 * Android: Add Samsung Pay support.
