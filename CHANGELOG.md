@@ -1,3 +1,7 @@
+## 1.6.2
+
+* ANDROID: Edge to edge.
+
 ## 1.6.1
 
 * IOS: Platform '14'.

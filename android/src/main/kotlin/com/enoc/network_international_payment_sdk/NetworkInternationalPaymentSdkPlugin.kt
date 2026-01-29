@@ -148,7 +148,6 @@ class NetworkInternationalPaymentSdkPlugin:
 
             activity?.let { currentActivity ->
                 val samsungPayClient = SamsungPayClient(currentActivity, serviceId, CoroutinesGatewayHttpClient())
-
                 samsungPayClient.isSamsungPayAvailable(object : com.samsung.android.sdk.samsungpay.v2.StatusListener {
                     override fun onSuccess(status: Int, bundle: android.os.Bundle?) {
                         if (status == com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_READY) {
@@ -294,6 +293,13 @@ class NetworkInternationalPaymentSdkPlugin:
             paymentsLauncher = PaymentsLauncher(it, ::handlePaymentResult)
             savedCardPaymentLauncher = SavedCardPaymentLauncher(it, ::handlePaymentResult)
         }
+        enableEdgeToEdge()
+    }
+
+    private fun enableEdgeToEdge() {
+        activity?.window?.let { window ->
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+        }
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -308,6 +314,7 @@ class NetworkInternationalPaymentSdkPlugin:
             paymentsLauncher = PaymentsLauncher(it, ::handlePaymentResult)
             savedCardPaymentLauncher = SavedCardPaymentLauncher(it, ::handlePaymentResult)
         }
+        enableEdgeToEdge()
     }
 
     override fun onDetachedFromActivity() {
