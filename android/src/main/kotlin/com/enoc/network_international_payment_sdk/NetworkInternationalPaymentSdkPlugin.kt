@@ -20,6 +20,14 @@ import payment.sdk.android.samsungpay.SamsungPayResponse
 import payment.sdk.android.savedCard.SavedCardPaymentLauncher
 import payment.sdk.android.savedCard.SavedCardPaymentRequest
 import payment.sdk.android.core.api.CoroutinesGatewayHttpClient
+import android.view.View
+import android.view.Window
+import android.view.WindowInsets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+
 
 class NetworkInternationalPaymentSdkPlugin:
     FlutterPlugin,
@@ -297,8 +305,8 @@ class NetworkInternationalPaymentSdkPlugin:
     }
 
     private fun enableEdgeToEdge() {
-        activity?.window?.let { window ->
-            WindowCompat.setDecorFitsSystemWindows(window, false)
+        activity?.window?.let { window: Window ->
+            WindowCompat.setDecorFitsSystemWindows(window, true)
         }
     }
 

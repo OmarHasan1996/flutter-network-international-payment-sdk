@@ -11,7 +11,10 @@ import 'package:network_international_payment_sdk/payment_result.dart';
 import 'package:network_international_payment_sdk/payment_status.dart';
 import 'package:network_international_payment_sdk/theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   runApp(const MyApp());
 }
 

@@ -1,3 +1,7 @@
+## 1.6.3
+
+* ANDROID: FiX Edge to edge.
+
 ## 1.6.2
 
 * ANDROID: Edge to edge.
