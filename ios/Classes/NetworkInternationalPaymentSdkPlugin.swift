@@ -7,6 +7,7 @@ import PassKit
 public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, CardPaymentDelegate, ApplePayDelegate {
     private var methodChannel: FlutterMethodChannel!
     static var flutterResult: FlutterResult?
+    private var currentOrderReference: String?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "network_international_payment_sdk", binaryMessenger: registrar.messenger())
@@ -47,6 +48,7 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
         do {
             let orderData = try JSONSerialization.data(withJSONObject: orderDetails, options: [])
             let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
+            self.currentOrderReference = orderResponse.reference
 
             DispatchQueue.main.async {
                 guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
@@ -77,6 +79,7 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
         do {
             let orderData = try JSONSerialization.data(withJSONObject: orderDetails, options: [])
             let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
+            self.currentOrderReference = orderResponse.reference
 
             DispatchQueue.main.async {
                 guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
@@ -102,11 +105,13 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
             completePayment(withError: FlutterError(code: "INVALID_ARGUMENTS", message: "orderDetails and applePayConfig are required", details: nil))
             return
         }
-        
+        applyUISettings(from: args)
+
         do {
             let orderData = try JSONSerialization.data(withJSONObject: orderDetails, options: [])
             let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
-            
+            self.currentOrderReference = orderResponse.reference
+
             var paymentRequest = try PKPaymentRequest(from: applePayConfig)
             
             // Add the total amount from the order to the payment summary.
@@ -139,10 +144,11 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
         let paymentResult: [String: String]
         switch status {
         case .PaymentSuccess: paymentResult = ["status": "SUCCESS", "reason": "Payment was successful"]
-        case .PaymentFailed: paymentResult = ["status": "FAILED", "reason": "Payment failed"]
+        case .PaymentFailed: paymentResult = ["status": "FAILED", "reason": "Payment failed. REF: \(currentOrderReference ?? "UNKNOWN")"]
         case .PaymentCancelled: paymentResult = ["status": "CANCELLED", "reason": "Payment was cancelled by the user"]
         @unknown default: paymentResult = ["status": "UNKNOWN", "reason": "An unknown payment status was received"]
         }
+        currentOrderReference = nil
         completePayment(withResult: paymentResult)
     }
 

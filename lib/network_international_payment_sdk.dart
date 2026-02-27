@@ -41,12 +41,14 @@ class NetworkInternationalPaymentSdk {
     Map<String, dynamic>? orderDetails,
     String? base64orderData,
     String? cvv, // Optional CVV
+    NITheme? theme,
   }) async {
     final finalOrderDetails = _prepareOrderDetails(orderDetails, base64orderData);
 
     final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startSavedCardPayment(
       orderDetails: finalOrderDetails,
       cvv: cvv,
+      theme: theme?.toMap(),
     );
 
     if (resultMap == null) {
@@ -61,6 +63,7 @@ class NetworkInternationalPaymentSdk {
     Map<String, dynamic>? orderDetails,
     String? base64orderData,
     required PKPaymentRequest applePayConfig,
+    NITheme? theme,
   }) async {
     if (!Platform.isIOS) {
       return PaymentResult(PaymentStatus.failed, "Apple Pay is only supported on iOS.");
@@ -70,6 +73,7 @@ class NetworkInternationalPaymentSdk {
     final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startApplePay(
       orderDetails: finalOrderDetails,
       applePayConfig: applePayConfig.toMap(),
+      theme: theme?.toMap(),
     );
 
     if (resultMap == null) {

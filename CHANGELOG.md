@@ -1,3 +1,8 @@
+## 1.6.4
+
+* IOS: Enable theme at all payment methods.
+* IOS: Return order reference number in payment failed reason.
+
 ## 1.6.3
 
 * ANDROID: FiX Edge to edge.

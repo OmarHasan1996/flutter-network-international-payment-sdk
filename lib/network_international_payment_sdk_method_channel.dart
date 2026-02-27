@@ -31,10 +31,12 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
   Future<Map<dynamic, dynamic>?> startSavedCardPayment({
     required Map<String, dynamic> orderDetails,
     String? cvv,
+    Map<String, dynamic>? theme,
   }) async {
     final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startSavedCardPayment', {
       'orderDetails': orderDetails,
       'cvv': cvv,
+      'theme': theme,
     });
     return result;
   }
@@ -43,10 +45,12 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
   Future<Map<dynamic, dynamic>?> startApplePay({
     required Map<String, dynamic> orderDetails,
     required Map<String, dynamic> applePayConfig,
+    Map<String, dynamic>? theme,
   }) async {
     final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startApplePay', {
       'orderDetails': orderDetails,
       'applePayConfig': applePayConfig,
+      'theme': theme,
     });
     return result;
   }

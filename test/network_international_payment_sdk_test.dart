@@ -30,6 +30,7 @@ class MockNetworkInternationalPaymentSdkPlatform
   Future<Map<dynamic, dynamic>?> startSavedCardPayment({
     required Map<String, dynamic> orderDetails,
     String? cvv,
+    Map<String, dynamic>? theme,
   }) async {
     expect(orderDetails['testKey'], 'testValue');
     expect(cvv, '123');
@@ -40,6 +41,7 @@ class MockNetworkInternationalPaymentSdkPlatform
   Future<Map<dynamic, dynamic>?> startApplePay({
     required Map<String, dynamic> orderDetails,
     required Map<String, dynamic> applePayConfig,
+    Map<String, dynamic>? theme,
   }) async {
     expect(orderDetails['testKey'], 'testValue');
     expect(applePayConfig['merchantIdentifier'], 'test_apple_pay_id');
