@@ -1,3 +1,7 @@
+## 1.6.5
+
+* IOS: Updated iOS native dependency `NISdk` to `6.0.0`.
+
 ## 1.6.4
 
 * IOS: Enable theme at all payment methods.
