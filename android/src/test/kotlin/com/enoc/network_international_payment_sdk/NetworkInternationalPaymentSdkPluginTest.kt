@@ -2,26 +2,63 @@ package com.enoc.network_international_payment_sdk
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito
 import kotlin.test.Test
 
 /*
  * This demonstrates a simple unit test of the Kotlin portion of this plugin's implementation.
- *
- * Once you have built the plugin's example app, you can run these tests from the command
- * line by running `./gradlew testDebugUnitTest` in the `example/android/` directory, or
- * you can run them directly from IDEs that support JUnit such as Android Studio.
  */
 
 internal class NetworkInternationalPaymentSdkPluginTest {
+
     @Test
-    fun onMethodCall_getPlatformVersion_returnsExpectedValue() {
+    fun onMethodCall_unknownMethod_returnsNotImplemented() {
         val plugin = NetworkInternationalPaymentSdkPlugin()
 
-        val call = MethodCall("getPlatformVersion", null)
+        val call = MethodCall("someUnknownMethod", null)
         val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
+        
         plugin.onMethodCall(call, mockResult)
 
-        Mockito.verify(mockResult).success("Android " + android.os.Build.VERSION.RELEASE)
+        Mockito.verify(mockResult).notImplemented()
     }
+
+    @Test
+    fun onMethodCall_startCardPayment_withoutOrderDetails_returnsError() {
+        val plugin = NetworkInternationalPaymentSdkPlugin()
+
+        val call = MethodCall("startCardPayment", mapOf<String, Any>())
+        val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
+        
+        plugin.onMethodCall(call, mockResult)
+
+        Mockito.verify(mockResult).error(eq("LAUNCH_ERROR"), eq("orderDetails is required"), any())
+    }
+
+    @Test
+    fun onMethodCall_startSavedCardPayment_withoutOrderDetails_returnsError() {
+        val plugin = NetworkInternationalPaymentSdkPlugin()
+
+        val call = MethodCall("startSavedCardPayment", mapOf<String, Any>())
+        val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
+        
+        plugin.onMethodCall(call, mockResult)
+
+        Mockito.verify(mockResult).error(eq("LAUNCH_ERROR"), eq("orderDetails is required"), any())
+    }
+
+    @Test
+    fun onMethodCall_startSamsungPay_withoutOrderDetails_returnsError() {
+        val plugin = NetworkInternationalPaymentSdkPlugin()
+
+        val call = MethodCall("startSamsungPay", mapOf<String, Any>())
+        val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
+        
+        plugin.onMethodCall(call, mockResult)
+
+        Mockito.verify(mockResult).error(eq("LAUNCH_ERROR"), eq("orderDetails is required"), any())
+    }
+
 }

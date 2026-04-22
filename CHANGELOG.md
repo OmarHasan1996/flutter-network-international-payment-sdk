@@ -1,3 +1,9 @@
+## 1.6.6
+
+* ANDROID: Added unit tests for `NetworkInternationalPaymentSdkPlugin`.
+* ANDROID: Improved error handling and validation for payment method arguments.
+* ANDROID: Updated build configuration and dependencies.
+
 ## 1.6.5
 
 * IOS: Updated iOS native dependency `NISdk` to `6.0.0`.
