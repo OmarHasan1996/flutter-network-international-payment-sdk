@@ -1,7 +1,6 @@
 #!/bin/bash
-# setup_spm.sh
-# Vendors NISdk 6.0.0 Swift source into ios/Sources/NISdk/ for SPM.
-# Run once from the ios/ directory, then commit Sources/NISdk/.
+# setup_spm.sh — run once from the ios/ directory.
+# Vendors NISdk v6.0.0 Swift source into the SPM package.
 #
 # Usage:
 #   cd ios/
@@ -12,7 +11,7 @@ set -e
 NISDK_VERSION="v6.0.0"
 NISDK_REPO="https://github.com/network-international/payment-sdk-ios.git"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-NISDK_TARGET="$SCRIPT_DIR/Sources/NISdk"
+NISDK_TARGET="$SCRIPT_DIR/network_international_payment_sdk/Sources/NISdk"
 TMP_DIR=$(mktemp -d)
 
 echo "▶ Cloning NISdk $NISDK_VERSION …"
@@ -31,18 +30,18 @@ fi
 rm -rf "$TMP_DIR"
 
 echo ""
-echo "✅ Done! Final structure:"
+echo "✅ Done! Final SPM structure:"
 echo "   ios/"
-echo "   ├── Package.swift"
 echo "   ├── network_international_payment_sdk.podspec"
-echo "   ├── Classes/"
-echo "   │   └── NetworkInternationalPaymentSdkPlugin.swift"
-echo "   └── Sources/"
-echo "       └── NISdk/          ← vendored NISdk $NISDK_VERSION"
-echo "           ├── (Swift sources)"
-echo "           └── Resources/"
+echo "   ├── setup_spm.sh"
+echo "   └── network_international_payment_sdk/"
+echo "       ├── Package.swift"
+echo "       └── Sources/"
+echo "           ├── network_international_payment_sdk/"
+echo "           │   └── NetworkInternationalPaymentSdkPlugin.swift"
+echo "           └── NISdk/          ← vendored $NISDK_VERSION"
 echo ""
 echo "Next steps:"
-echo "  1. git add Sources/NISdk && git commit -m 'vendor NISdk $NISDK_VERSION for SPM'"
-echo "  2. flutter config --enable-swift-package-manager"
+echo "  1. git add network_international_payment_sdk/Sources/NISdk"
+echo "  2. git commit -m 'vendor NISdk $NISDK_VERSION for SPM support'"
 echo "  3. flutter pub get"
