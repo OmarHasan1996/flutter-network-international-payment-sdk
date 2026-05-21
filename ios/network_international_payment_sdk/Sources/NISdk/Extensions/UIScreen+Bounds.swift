@@ -1,3 +1,4 @@
+import UIKit
 //
 //  UIScreen+Bounds.swift
 //  NISdk

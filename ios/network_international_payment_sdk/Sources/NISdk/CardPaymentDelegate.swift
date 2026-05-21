@@ -1,3 +1,4 @@
+import UIKit
 //
 //  NIPaymentContextDelegate.swift
 //  NISdk

@@ -1,3 +1,4 @@
+import UIKit
 //
 //  NotificationTypes.swift
 //  NISdk

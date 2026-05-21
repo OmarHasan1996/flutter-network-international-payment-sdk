@@ -1,3 +1,4 @@
+import UIKit
 //
 //  URL+QueryParams.swift
 //  NISdk

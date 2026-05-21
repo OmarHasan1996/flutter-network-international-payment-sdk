@@ -1,3 +1,4 @@
+import UIKit
 //
 //  VisSavedCardMatchedCandidates.swift
 //  NISdk

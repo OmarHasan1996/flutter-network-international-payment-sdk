@@ -1,3 +1,4 @@
+import UIKit
 //
 //  UIView+Border.swift
 //  NISdk

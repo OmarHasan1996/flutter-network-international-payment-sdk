@@ -1,3 +1,4 @@
+import UIKit
 //
 //  Amount.swift
 //  NISdk

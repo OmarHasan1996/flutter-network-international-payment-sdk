@@ -1,3 +1,4 @@
+import UIKit
 //
 //  NITransactionAdapter.swift
 //  NISdk

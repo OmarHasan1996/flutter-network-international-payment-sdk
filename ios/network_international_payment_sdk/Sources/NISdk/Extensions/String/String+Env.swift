@@ -1,3 +1,4 @@
+import UIKit
 //
 //  String+Env.swift
 //  NISdk

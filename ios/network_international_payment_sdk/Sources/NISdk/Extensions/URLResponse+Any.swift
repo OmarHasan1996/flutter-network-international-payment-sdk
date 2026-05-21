@@ -1,3 +1,4 @@
+import UIKit
 //
 //  URLResponse+StatusCode.swift
 //  NISdk
