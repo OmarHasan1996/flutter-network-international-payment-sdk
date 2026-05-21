@@ -1,3 +1,7 @@
+## 1.6.7
+
+* IOS: Support Swift Package manager.
+
 ## 1.6.6
 
 * ANDROID: Added unit tests for `NetworkInternationalPaymentSdkPlugin`.
