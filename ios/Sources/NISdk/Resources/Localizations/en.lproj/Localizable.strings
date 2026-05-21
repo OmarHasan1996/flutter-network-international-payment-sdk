@@ -1,0 +1,68 @@
+/* 
+  Localizable.strings
+  NISdk
+
+  Created by Johnny Peter on 06/09/19.
+  Copyright © 2019 Network International. All rights reserved.
+*/
+
+"Expires" = "Expires";
+"MM" = "MM";
+"YY" = "YY";
+"Number" = "Number";
+"Card Number" = "Card Number";
+"Cardholder Name" = "Cardholder Name";
+"Name" = "Name";
+"CVV" = "CVV";
+"Secure Code" = "Secure Code";
+"Pay" = "Pay";
+"Make Payment" = "Make Payment";
+"Processing Payment" = "Processing Payment";
+"Pay Button Title" = "Pay  %@";
+"Invalid pan number" = "Invalid card number";
+"Invalid card provider" = "This card provider is not allowed";
+"Invalid expiry date" = "Invalid expiry date";
+"Invalid CVV Field" = "Invalid CVV Field";
+"Invalid card holder name" = "Invalid card holder name";
+"All fields are mandatory" = "All fields are mandatory";
+"Cancel" = "Cancel";
+"Authenticating Payment" = "Authenticating Payment";
+"Authenticating using 3DS" = "Authenticating using 3DS";
+"Cancel Payment Title" = "Cancel Payment";
+"Cancel Payment Message" = "Are you sure you want to cancel the payment?";
+"Cancel Alert" = "No";
+"Cancel Confirm" = "Yes, Cancel";
+"Yes" = "Yes";
+"Visa Instalment Eligible" = "Eligible for Installments";
+"Visa Monthly Instalment" = "Monthly Installment: %@";
+"Visa Bi Monthly Instalment" = "Bi-Monthly Installment: %@";
+"Visa Weekly Instalment" = "Weekly Installment: %@";
+"Visa Bi Weekly Instalment" = "Bi-Weekly Installment: %@";
+
+"Visa Monthly Rate" = "Monthly Rate: %@ %%";
+"Visa Bi Monthly Rate" = "Bi-Monthly Rate: %@ %%";
+"Visa Weekly Rate" = "Weekly Rate: %@ %%";
+"Visa Bi Weekly Rate" = "Bi-Weekly Rate: %@ %%";
+
+"Visa Processing Fee" = "Processing Fees: %@";
+"Visa Terms And Conditions" = "Terms and Conditions";
+"Visa Read Less" = "Read less";
+"Visa Read More" = "Read more";
+"Visa Pay In Instalment" = "Pay in %@";
+"Visa Pay In Full" = "Pay in Full";
+
+"Patial Auth Title" = "Customer confirmation";
+"Partial Auth Message With Org" = "Your issuing bank %@ has approved %@ instead of the full amount of %@.";
+"Partial Auth Message" = "Your issuing bank has approved %@ instead of the full amount of %@.";
+"Partial Auth Message Question" = "Do you wish to process the transaction with the reduced amount?";
+
+
+"aani_paying_amount" = "Paying %@";
+"aani_tap_notification" = "Tap the notification received in your app to complete the payment.";
+"aani_note_do_not_close" = "Please do not close the app while the timer is running.";
+"aani" = "AANI";
+"aani_mobile_number" = "Mobile number";
+"aani_emirates_id" = "Emirates ID";
+"aani_passport_id" = "Passport ID";
+"aani_email_id" = "Email ID";
+"aani_alias_type" = "Alias type";
