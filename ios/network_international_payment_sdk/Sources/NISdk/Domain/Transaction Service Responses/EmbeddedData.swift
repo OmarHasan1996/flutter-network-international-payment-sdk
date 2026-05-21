@@ -1,3 +1,4 @@
+import UIKit
 //
 //  EmbeddedData.swift
 //  NISdk

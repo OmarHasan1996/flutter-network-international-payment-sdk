@@ -1,3 +1,4 @@
+import UIKit
 //
 //  Collection+Pairs.swift
 //  NISdk

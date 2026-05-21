@@ -1,3 +1,4 @@
+import UIKit
 //
 //  UIFont+RegisterFromBundle.swift
 //  NISdk

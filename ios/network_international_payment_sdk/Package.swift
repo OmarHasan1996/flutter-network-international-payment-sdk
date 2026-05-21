@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "network_international_payment_sdk",
+    defaultLocalization: "en", // Required: NISdk has localized .strings resources
     platforms: [
         .iOS(.v14)  // NISdk 6.0.0 requires iOS 14+
     ],
@@ -52,6 +53,13 @@ let package = Package(
             ],
             swiftSettings: [
                 .unsafeFlags(["-suppress-warnings"])
+            ],
+            linkerSettings: [
+                .linkedFramework("UIKit"),
+                .linkedFramework("Foundation"),
+                .linkedFramework("WebKit"),
+                .linkedFramework("PassKit"),
+                .linkedFramework("Security")
             ]
         )
     ]

@@ -1,3 +1,4 @@
+import UIKit
 //
 //  Pan.swift
 //  NISdk

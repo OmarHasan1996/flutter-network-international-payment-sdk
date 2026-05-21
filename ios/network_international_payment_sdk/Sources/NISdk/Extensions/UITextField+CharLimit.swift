@@ -1,3 +1,4 @@
+import UIKit
 //
 //  UITextField+MaxLen.swift
 //  NISdk

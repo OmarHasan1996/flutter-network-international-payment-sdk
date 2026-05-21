@@ -1,3 +1,4 @@
+import UIKit
 //
 //  Local+Extensions.swift
 //  NISdk

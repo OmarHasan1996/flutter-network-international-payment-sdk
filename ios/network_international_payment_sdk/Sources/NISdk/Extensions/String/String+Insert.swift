@@ -1,3 +1,4 @@
+import UIKit
 //
 //  String+Group.swift
 //  NISdk

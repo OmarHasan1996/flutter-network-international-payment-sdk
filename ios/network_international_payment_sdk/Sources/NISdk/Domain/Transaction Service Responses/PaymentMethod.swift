@@ -1,3 +1,4 @@
+import UIKit
 //
 //  PaymentMethod.swift
 //  NISdk

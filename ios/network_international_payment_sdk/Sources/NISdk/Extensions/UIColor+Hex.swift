@@ -1,3 +1,4 @@
+import UIKit
 //
 //  UIColor+Hex.swift
 //  NISdk

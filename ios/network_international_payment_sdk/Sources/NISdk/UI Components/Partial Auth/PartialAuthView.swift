@@ -1,3 +1,4 @@
+import UIKit
 //
 //  PartialAuthView.swift
 //  NISdk
