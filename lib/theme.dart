@@ -72,18 +72,18 @@ class NIThemeIOS {
   /// Converts the theme to a map that can be sent over the method channel.
   Map<String, String> toMap() {
     return {
-      if (cardPreviewColor != null) 'cardPreviewColor': cardPreviewColor!,
-      if (cardPreviewLabelColor != null) 'cardPreviewLabelColor': cardPreviewLabelColor!,
-      if (payPageBackgroundColor != null) 'payPageBackgroundColor': payPageBackgroundColor!,
-      if (payPageLabelColor != null) 'payPageLabelColor': payPageLabelColor!,
-      if (textFieldLabelColor != null) 'textFieldLabelColor': textFieldLabelColor!,
-      if (textFieldPlaceholderColor != null) 'textFieldPlaceholderColor': textFieldPlaceholderColor!,
-      if (payPageDividerColor != null) 'payPageDividerColor': payPageDividerColor!,
-      if (payButtonBackgroundColor != null) 'payButtonBackgroundColor': payButtonBackgroundColor!,
-      if (payButtonTitleColor != null) 'payButtonTitleColor': payButtonTitleColor!,
-      if (payButtonTitleColorHighlighted != null) 'payButtonTitleColorHighlighted': payButtonTitleColorHighlighted!,
-      if (payButtonActivityIndicatorColor != null) 'payButtonActivityIndicatorColor': payButtonActivityIndicatorColor!,
-      if (payPageTitleColor != null) 'payPageTitleColor': payPageTitleColor!,
+      'cardPreviewColor': ?cardPreviewColor,
+      'cardPreviewLabelColor': ?cardPreviewLabelColor,
+      'payPageBackgroundColor': ?payPageBackgroundColor,
+      'payPageLabelColor': ?payPageLabelColor,
+      'textFieldLabelColor': ?textFieldLabelColor,
+      'textFieldPlaceholderColor': ?textFieldPlaceholderColor,
+      'payPageDividerColor': ?payPageDividerColor,
+      'payButtonBackgroundColor': ?payButtonBackgroundColor,
+      'payButtonTitleColor': ?payButtonTitleColor,
+      'payButtonTitleColorHighlighted': ?payButtonTitleColorHighlighted,
+      'payButtonActivityIndicatorColor': ?payButtonActivityIndicatorColor,
+      'payPageTitleColor': ?payPageTitleColor,
     };
   }
 }
