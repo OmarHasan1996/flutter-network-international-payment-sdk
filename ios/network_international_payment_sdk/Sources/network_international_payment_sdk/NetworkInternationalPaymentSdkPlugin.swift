@@ -13,7 +13,7 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
         let channel = FlutterMethodChannel(name: "network_international_payment_sdk", binaryMessenger: registrar.messenger())
         let instance = NetworkInternationalPaymentSdkPlugin()
         instance.methodChannel = channel
-        NISdk.initialize()
+        NISdk.sharedInstance.platform = .iOSFlutter
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
 

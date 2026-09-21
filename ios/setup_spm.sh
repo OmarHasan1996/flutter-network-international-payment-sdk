@@ -8,7 +8,7 @@
 
 set -e
 
-NISDK_VERSION="v6.0.0"
+NISDK_VERSION="v6.1.1"
 NISDK_REPO="https://github.com/network-international/payment-sdk-ios.git"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 NISDK_TARGET="$SCRIPT_DIR/network_international_payment_sdk/Sources/NISdk"
@@ -21,6 +21,13 @@ echo "▶ Copying Swift sources → Sources/NISdk/ …"
 rm -rf "$NISDK_TARGET"
 mkdir -p "$NISDK_TARGET"
 cp -r "$TMP_DIR/NISdk/Source/." "$NISDK_TARGET/"
+
+echo "▶ Patching missing UIKit imports for SPM support …"
+find "$NISDK_TARGET" -name "*.swift" | while IFS= read -r f; do
+    if grep -q "import Foundation" "$f" && ! grep -q "import UIKit" "$f"; then
+        awk '{print} /import Foundation/ {print "import UIKit"}' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    fi
+done
 
 if [ -d "$TMP_DIR/NISdk/Resources" ]; then
     echo "▶ Copying resources → Sources/NISdk/Resources/ …"

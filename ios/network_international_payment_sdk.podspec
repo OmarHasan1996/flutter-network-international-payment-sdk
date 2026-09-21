@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'network_international_payment_sdk'
-  s.version          = '1.6.8'
+  s.version          = '1.6.9'
   s.summary          = 'Flutter plugin for Network International (N-Genius) Payment SDK integration.'
   s.description      = <<-DESC
 A Flutter plugin to provide an easy-to-use integration for handling payments using N-Genius native SDKs in Flutter applications, supporting New Cards, Saved Cards, Apple Pay, and Google Pay.
@@ -15,7 +15,7 @@ A Flutter plugin to provide an easy-to-use integration for handling payments usi
   s.source           = { :path => '.' }
   s.source_files = 'network_international_payment_sdk/Sources/network_international_payment_sdk/**/*.swift'
   s.dependency 'Flutter'
-  s.dependency 'NISdk', '6.0.0'
+  s.dependency 'NISdk', '6.1.1'
   s.platform = :ios, '14.0'
 
   # Flutter.framework does not contain a i386 slice.
