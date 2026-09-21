@@ -86,12 +86,15 @@ The N-Genius iOS SDK (`NISdk`) is included as a dependency. You just need to ens
 ```ruby
 # ios/Podfile
 
-platform :ios, '12.0' # Ensure your platform target is 12.0 or higher
+platform :ios, '14.0' # Ensure your platform target is 14.0 or higher
 
 # ... rest of your Podfile
 ```
 
 After adding the source, run `pod install` in your `ios` directory.
+
+### SPM Support (Internal)
+The plugin vendors `NISdk v6.1.1` for Swift Package Manager support. If you are using SPM, ensure your deployment target is at least **iOS 14.0**.
 
 ---
 

@@ -1,3 +1,9 @@
+## 1.6.9
+
+* IOS: Updated iOS native dependency `NISdk` to `6.1.1`.
+* IOS: Added `X-NI-Platform: IOS_FLUTTER` header to all gateway requests for better integration tracking.
+* IOS: Improved SPM support by automatically patching missing `UIKit` imports in vendored source.
+
 ## 1.6.8
 
 * Updates minimum supported SDK version to Flutter 3.44/Dart 3.12. 
