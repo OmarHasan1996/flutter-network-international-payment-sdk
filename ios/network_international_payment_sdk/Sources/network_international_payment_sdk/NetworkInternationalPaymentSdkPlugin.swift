@@ -115,7 +115,7 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Card
             var paymentRequest = try PKPaymentRequest(from: applePayConfig)
             
             // Add the total amount from the order to the payment summary.
-            if let amountValue = orderResponse.amount?.value {
+            if let amountValue = orderResponse.amount?.value, NISdk.sharedInstance.shouldShowOrderAmount {
                 let totalAmount = NSDecimalNumber(value: amountValue).dividing(by: 100) // Assuming the amount is in minor units
                 paymentRequest.paymentSummaryItems.append(PKPaymentSummaryItem(label: "TOTAL", amount: totalAmount))
             }

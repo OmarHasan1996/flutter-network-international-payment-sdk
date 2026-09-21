@@ -1,3 +1,8 @@
+## 1.7.0
+
+* IOS: Support `showOrderAmount` and `showCancelAlert` in `startSavedCardPayment` and `startApplePay`.
+* IOS: Conditionally show amount in Apple Pay sheet based on `showOrderAmount`.
+
 ## 1.6.10
 
 * IOS: Updated iOS native dependency `NISdk` to `6.1.1`.

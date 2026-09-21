@@ -41,6 +41,8 @@ class NetworkInternationalPaymentSdk {
     Map<String, dynamic>? orderDetails,
     String? base64orderData,
     String? cvv, // Optional CVV
+    bool? showOrderAmount,
+    bool? showCancelAlert,
     NITheme? theme,
   }) async {
     final finalOrderDetails = _prepareOrderDetails(orderDetails, base64orderData);
@@ -48,6 +50,8 @@ class NetworkInternationalPaymentSdk {
     final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startSavedCardPayment(
       orderDetails: finalOrderDetails,
       cvv: cvv,
+      showOrderAmount: showOrderAmount,
+      showCancelAlert: showCancelAlert,
       theme: theme?.toMap(),
     );
 
@@ -63,6 +67,8 @@ class NetworkInternationalPaymentSdk {
     Map<String, dynamic>? orderDetails,
     String? base64orderData,
     required PKPaymentRequest applePayConfig,
+    bool? showOrderAmount,
+    bool? showCancelAlert,
     NITheme? theme,
   }) async {
     if (!Platform.isIOS) {
@@ -73,6 +79,8 @@ class NetworkInternationalPaymentSdk {
     final resultMap = await NetworkInternationalPaymentSdkPlatform.instance.startApplePay(
       orderDetails: finalOrderDetails,
       applePayConfig: applePayConfig.toMap(),
+      showOrderAmount: showOrderAmount,
+      showCancelAlert: showCancelAlert,
       theme: theme?.toMap(),
     );
 
