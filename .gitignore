@@ -32,4 +32,3 @@ migrate_working_dir/
 /build/
 /coverage/
 example/pubspec.lock
-ios/network_international_payment_sdk/Sources/NISdk
