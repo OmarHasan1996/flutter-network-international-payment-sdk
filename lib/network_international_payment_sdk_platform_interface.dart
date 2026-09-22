@@ -36,8 +36,6 @@ abstract class NetworkInternationalPaymentSdkPlatform extends PlatformInterface 
   Future<Map<dynamic, dynamic>?> startSavedCardPayment({
     required Map<String, dynamic> orderDetails,
     String? cvv,
-    bool? showOrderAmount,
-    bool? showCancelAlert,
     Map<String, dynamic>? theme,
   }) {
     throw UnimplementedError('startSavedCardPayment() has not been implemented.');
@@ -46,8 +44,6 @@ abstract class NetworkInternationalPaymentSdkPlatform extends PlatformInterface 
   Future<Map<dynamic, dynamic>?> startApplePay({
     required Map<String, dynamic> orderDetails,
     required Map<String, dynamic> applePayConfig,
-    bool? showOrderAmount,
-    bool? showCancelAlert,
     Map<String, dynamic>? theme,
   }) {
     throw UnimplementedError('startApplePay() has not been implemented.');
