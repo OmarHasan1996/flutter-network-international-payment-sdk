@@ -70,9 +70,10 @@ class CardPreviewController: UIViewController {
         vStack.layoutMargins = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
         vStack.isLayoutMarginsRelativeArrangement = true
         
-        let stackBackgroundView = UIView()
+        let stackBackgroundView = CardPreviewBackgroundView()
         stackBackgroundView.backgroundColor = NISdk.sharedInstance.niSdkColors.cardPreviewColor
-        stackBackgroundView.layer.borderColor = ColorCompatibility.label.cgColor
+        stackBackgroundView.gradientColors = NISdk.sharedInstance.niSdkColors.cardPreviewGradient
+        stackBackgroundView.borderColor = ColorCompatibility.label
         stackBackgroundView.layer.borderWidth = 1.0
         stackBackgroundView.pinAsBackground(to: vStack)
         stackBackgroundView.layer.cornerRadius = 16
@@ -186,7 +187,7 @@ class CardPreviewController: UIViewController {
                          bottom: containerView.bottomAnchor,
                          trailing: nil,
                          padding: UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10),
-                         size: CGSize(width: UIScreen().deviceScreenWidth * 0.45, height: 0))
+                         size: CGSize(width: UIScreen.main.deviceScreenWidth * 0.45, height: 0))
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(didChangeCardHolderName(_:)),
                                                name: .didChangeCardHolderName, object: nil)
@@ -223,6 +224,37 @@ class CardPreviewController: UIViewController {
         if let scheme = savedCard.scheme {
             cardProvider = CardProvider(rawValue: scheme)
             updateCardLogo()
+        }
+    }
+}
+
+/// Card preview background: solid `cardPreviewColor`, or a left-to-right gradient when
+/// `cardPreviewStartColor` and `cardPreviewEndColor` are set (as on Android).
+private class CardPreviewBackgroundView: UIView {
+    override class var layerClass: AnyClass { CAGradientLayer.self }
+
+    var gradientColors: [UIColor]? {
+        didSet {
+            let layer = self.layer as! CAGradientLayer
+            layer.colors = gradientColors?.map { $0.cgColor }
+            layer.startPoint = CGPoint(x: 0, y: 0.5)
+            layer.endPoint = CGPoint(x: 1, y: 0.5)
+            // Gradient contents are only clipped to the rounded corners when masked.
+            layer.masksToBounds = gradientColors != nil
+        }
+    }
+
+    var borderColor: UIColor? {
+        didSet { layer.borderColor = borderColor?.cgColor }
+    }
+
+    // CGColors are resolved once; re-resolve them when switching light/dark.
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if #available(iOS 13.0, *),
+           traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            layer.borderColor = borderColor?.cgColor
+            (layer as! CAGradientLayer).colors = gradientColors?.map { $0.cgColor }
         }
     }
 }

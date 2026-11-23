@@ -31,7 +31,7 @@ class VisaInstallmentViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .white
+        view.backgroundColor = NISdk.sharedInstance.niSdkColors.payPageBackgroundColor
         setupCancelButton()
         let installmentPlans = visaPlan.toInstallmentPlans(fullAmount: fullAmount)
         let child = UIHostingController(rootView: VisaInstallmentView(plans: installmentPlans, cardNumber: cardNumber, onMakePayment: { plan in
@@ -64,7 +64,10 @@ class VisaInstallmentViewController: UIViewController {
         self.parent?.navigationItem.title = "Make Payment".localized
         let textAttributes = [NSAttributedString.Key.foregroundColor: NISdk.sharedInstance.niSdkColors.payPageTitleColor]
         navigationController?.navigationBar.titleTextAttributes = textAttributes
+        NISdk.sharedInstance.niSdkColors.applyNavigationBarColors(to: navigationController?.navigationBar)
         self.parent?.navigationItem.rightBarButtonItem = UIBarButtonItem.init(title: "Cancel".localized, style: .done, target: self, action: #selector(self.cancelAction))
+        // nil keeps the default tint. Set on the item: the .done style ignores the bar tint on recent iOS.
+        self.parent?.navigationItem.rightBarButtonItem?.tintColor = NISdk.sharedInstance.niSdkColors.navigationBarButtonColor
     }
     
     @objc func cancelAction() {

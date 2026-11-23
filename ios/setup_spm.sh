@@ -8,7 +8,7 @@
 
 set -e
 
-NISDK_VERSION="v6.1.1"
+NISDK_VERSION="v6.1.6"
 NISDK_REPO="https://github.com/network-international/payment-sdk-ios.git"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 NISDK_TARGET="$SCRIPT_DIR/network_international_payment_sdk/Sources/NISdk"

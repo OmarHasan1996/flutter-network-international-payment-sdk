@@ -94,7 +94,7 @@ platform :ios, '14.0' # Ensure your platform target is 14.0 or higher
 After adding the source, run `pod install` in your `ios` directory.
 
 ### SPM Support (Internal)
-The plugin vendors `NISdk v6.1.1` for Swift Package Manager support. If you are using SPM, ensure your deployment target is at least **iOS 14.0**.
+The plugin vendors `NISdk v6.1.6` for Swift Package Manager support. If you are using SPM, ensure your deployment target is at least **iOS 15.0**.
 
 ---
 

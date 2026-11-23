@@ -15,8 +15,8 @@ A Flutter plugin to provide an easy-to-use integration for handling payments usi
   s.source           = { :path => '.' }
   s.source_files = 'network_international_payment_sdk/Sources/network_international_payment_sdk/**/*.swift'
   s.dependency 'Flutter'
-  s.dependency 'NISdk', '6.1.1'
-  s.platform = :ios, '14.0'
+  s.dependency 'NISdk', '6.1.6'
+  s.platform = :ios, '15.0'
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }

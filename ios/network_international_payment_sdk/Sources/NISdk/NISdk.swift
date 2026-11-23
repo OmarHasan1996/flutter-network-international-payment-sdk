@@ -45,8 +45,8 @@ private class NISdkBundleLocator {}
 
     var niSdkColors = NISdkColors()
     var sdkLanguage = "en"
-    public var shouldShowOrderAmount = true
-    public var shouldShowCancelAlert = false
+    @objc public var shouldShowOrderAmount = true
+    @objc public var shouldShowCancelAlert = false
 
     // Overall wall-clock cap on a single 3DS authentication session. If the flow
     // (fingerprint, authentication calls, ACS challenge render, customer challenge,
@@ -56,13 +56,13 @@ private class NISdkBundleLocator {}
     // but well below the server-side 3DS timeout (~10 min). Set to 0 to disable.
     public var threeDSSessionTimeout: TimeInterval = 300.0
 
-    public var version: String = "6.1.1"
+    public var version: String = "6.1.6"
 
     /// How this SDK is being consumed, sent to the gateway as X-NI-Platform on every
     /// request. Native integrations leave it alone; the React Native bridge and the Flutter
     /// plugin set it during initialisation, because the native SDK underneath them is the
     /// same binary and cannot tell the difference on its own.
-    public var platform: NIPlatform = .iOSNative
+    @objc public var platform: NIPlatform = .iOSNative
 
     private override init() {
         super.init()
@@ -123,9 +123,6 @@ private class NISdkBundleLocator {}
         paymentViewController.modalPresentationStyle = .overCurrentContext
         if #available(iOS 13.0, *) {
             paymentViewController.isModalInPresentation = true
-            // The SDK palette is designed for a light background (label/title colors are
-            // fixed dark), so pin the SDK UI to light regardless of the host app / device.
-            navController.overrideUserInterfaceStyle = .light
         }
         DispatchQueue.main.async {
             parentViewController.present(navController, animated: true)
@@ -148,7 +145,6 @@ private class NISdkBundleLocator {}
         paymentViewController.modalPresentationStyle = .overCurrentContext
         if #available(iOS 13.0, *) {
             paymentViewController.isModalInPresentation = true
-            navController.overrideUserInterfaceStyle = .light
         }
         DispatchQueue.main.async {
             parentViewController.present(navController, animated: true)
@@ -170,7 +166,6 @@ private class NISdkBundleLocator {}
         paymentViewController.modalPresentationStyle = .overCurrentContext
         if #available(iOS 13.0, *) {
             paymentViewController.isModalInPresentation = true
-            navController.overrideUserInterfaceStyle = .light
         }
         DispatchQueue.main.async {
             parentViewController.present(navController, animated: true)
@@ -193,7 +188,6 @@ private class NISdkBundleLocator {}
             paymentViewController.modalPresentationStyle = .overCurrentContext
             if #available(iOS 13.0, *) {
                 paymentViewController.isModalInPresentation = true
-                navController.overrideUserInterfaceStyle = .light
             }
             DispatchQueue.main.async {
                 parentViewController.present(navController, animated: true)
@@ -217,7 +211,6 @@ private class NISdkBundleLocator {}
         paymentViewController.modalPresentationStyle = .overCurrentContext
         if #available(iOS 13.0, *) {
             paymentViewController.isModalInPresentation = true
-            paymentViewController.overrideUserInterfaceStyle = .light
         }
         parentViewController.present(paymentViewController, animated: true)
     }
@@ -233,7 +226,6 @@ private class NISdkBundleLocator {}
         paymentViewController.modalPresentationStyle = .overCurrentContext
         if #available(iOS 13.0, *) {
             paymentViewController.isModalInPresentation = true
-            navController.overrideUserInterfaceStyle = .light
         }
         DispatchQueue.main.async {
             parentViewController.present(navController, animated: true)

@@ -5,7 +5,7 @@ let package = Package(
     name: "network_international_payment_sdk",
     defaultLocalization: "en", // Required: NISdk has localized .strings resources
     platforms: [
-        .iOS(.v14)  // NISdk 6.1.1 requires iOS 14+
+        .iOS(.v15)  // NISdk 6.1.6 requires iOS 15+
     ],
     products: [
         .library(

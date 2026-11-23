@@ -1,3 +1,8 @@
+## 1.6.11
+
+* IOS: Updated iOS native dependency `NISdk` to `6.1.6`.
+* ANDROID: Updated Android native dependency `payment-sdk-android` to `5.2.7`.
+
 ## 1.6.10
 
 * IOS: Updated iOS native dependency `NISdk` to `6.1.1`.
