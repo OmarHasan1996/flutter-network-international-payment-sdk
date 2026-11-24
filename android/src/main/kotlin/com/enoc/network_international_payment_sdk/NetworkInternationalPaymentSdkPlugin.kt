@@ -1,16 +1,16 @@
 package com.enoc.network_international_payment_sdk
 
 import android.app.Activity
+import android.view.Window
 import androidx.activity.ComponentActivity
+import androidx.core.view.WindowCompat
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
+import org.json.JSONObject
 import payment.sdk.android.SDKConfig
 import payment.sdk.android.core.Order
+import payment.sdk.android.core.api.CoroutinesGatewayHttpClient
 import payment.sdk.android.googlepay.GooglePayConfig
 import payment.sdk.android.payments.PaymentsLauncher
 import payment.sdk.android.payments.PaymentsRequest
@@ -19,135 +19,125 @@ import payment.sdk.android.samsungpay.SamsungPayClient
 import payment.sdk.android.samsungpay.SamsungPayResponse
 import payment.sdk.android.savedCard.SavedCardPaymentLauncher
 import payment.sdk.android.savedCard.SavedCardPaymentRequest
-import payment.sdk.android.core.api.CoroutinesGatewayHttpClient
-import android.view.View
-import android.view.Window
-import android.view.WindowInsets
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 
-
-class NetworkInternationalPaymentSdkPlugin:
+class NetworkInternationalPaymentSdkPlugin :
     FlutterPlugin,
-    MethodCallHandler,
-    ActivityAware {
+    ActivityAware,
+    NetworkInternationalPaymentSdkApi {
 
-    private lateinit var channel: MethodChannel
     private var activity: Activity? = null
-    private var pendingResult: Result? = null
-    
+    private var pendingCallback: ((Result<PaymentResultData>) -> Unit)? = null
+
     private var paymentsLauncher: PaymentsLauncher? = null
     private var savedCardPaymentLauncher: SavedCardPaymentLauncher? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "network_international_payment_sdk")
-        channel.setMethodCallHandler(this)
+        NetworkInternationalPaymentSdkApi.setUp(flutterPluginBinding.binaryMessenger, this)
     }
 
-    override fun onMethodCall(call: MethodCall, result: Result) {
-        when (call.method) {
-            "startCardPayment" -> handleNewCardPayment(call, result)
-            "startSavedCardPayment" -> handleSavedCardPayment(call, result)
-            "startSamsungPay" -> handleSamsungPayPayment(call, result)
-            else -> result.notImplemented()
-        }
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        NetworkInternationalPaymentSdkApi.setUp(binding.binaryMessenger, null)
     }
 
-    private fun handleNewCardPayment(call: MethodCall, result: Result) {
+    override fun startCardPayment(
+        request: CardPaymentRequest,
+        callback: (Result<PaymentResultData>) -> Unit
+    ) {
         try {
-            if (pendingResult != null) {
-                result.error("ALREADY_ACTIVE", "A payment is already in progress.", null)
+            if (pendingCallback != null) {
+                callback(Result.failure(FlutterError("ALREADY_ACTIVE", "A payment is already in progress.", null)))
                 return
             }
-            pendingResult = result
+            pendingCallback = callback
 
-            val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
-                ?: throw IllegalArgumentException("orderDetails is required")
-            
-            val showOrderAmount = call.argument<Boolean>("showOrderAmount")
-            val showCancelAlert = call.argument<Boolean>("showCancelAlert")
-            SDKConfig.shouldShowOrderAmount(showOrderAmount ?: true)
-            SDKConfig.shouldShowCancelAlert(showCancelAlert ?: true)
+            SDKConfig.shouldShowOrderAmount(request.showOrderAmount ?: true)
+            SDKConfig.shouldShowCancelAlert(request.showCancelAlert ?: true)
 
-            val googlePayConfigMap = call.argument<HashMap<String, Any>>("googlePayConfig")
-
-            val links = (orderDetails["_links"] as? HashMap<String, Any>)
+            val json = JSONObject(request.orderDetailsJson)
+            val links = json.optJSONObject("_links")
                 ?: throw Exception("_links not found in orderDetails")
 
-            val authUrl = ((links["payment-authorization"] as? HashMap<String, Any>)?.get("href") as? String)
+            val authUrl = links.optJSONObject("payment-authorization")?.optString("href")
                 ?: throw Exception("Authorization URL not found in orderDetails")
 
-            val paymentUrl = ((links["payment"] as? HashMap<String, Any>)?.get("href") as? String)
+            val paymentUrl = links.optJSONObject("payment")?.optString("href")
                 ?: throw Exception("Payment URL not found in orderDetails")
 
             paymentsLauncher?.let { launcher ->
                 val requestBuilder = PaymentsRequest.builder()
                     .gatewayAuthorizationUrl(authUrl)
                     .payPageUrl(paymentUrl)
-                
-                googlePayConfigMap?.let {
-                    requestBuilder.setGooglePayConfig(createGooglePayConfig(it))
+
+                request.googlePayConfigMap?.let { map ->
+                    @Suppress("UNCHECKED_CAST")
+                    requestBuilder.setGooglePayConfig(createGooglePayConfig(map as Map<String, Any>))
                 }
-                
+
                 launcher.launch(requestBuilder.build())
             } ?: throw IllegalStateException("Plugin is not attached to a ComponentActivity or the launcher could not be initialized.")
 
         } catch (e: Exception) {
-            pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
-            pendingResult = null
+            pendingCallback = null
+            callback(Result.failure(FlutterError("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)))
         }
     }
-    
-    private fun handleSavedCardPayment(call: MethodCall, result: Result) {
+
+    override fun startSavedCardPayment(
+        request: SavedCardPaymentRequest,
+        callback: (Result<PaymentResultData>) -> Unit
+    ) {
         try {
-             if (pendingResult != null) {
-                result.error("ALREADY_ACTIVE", "A payment is already in progress.", null)
+            if (pendingCallback != null) {
+                callback(Result.failure(FlutterError("ALREADY_ACTIVE", "A payment is already in progress.", null)))
                 return
             }
-            pendingResult = result
+            pendingCallback = callback
 
-            val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
-                ?: throw IllegalArgumentException("orderDetails is required")
-            val cvv = call.argument<String>("cvv")
-
-            val links = (orderDetails["_links"] as? HashMap<String, Any>)
+            val json = JSONObject(request.orderDetailsJson)
+            val links = json.optJSONObject("_links")
                 ?: throw Exception("_links not found in orderDetails")
 
-            val authUrl = ((links["payment-authorization"] as? HashMap<String, Any>)?.get("href") as? String)
+            val authUrl = links.optJSONObject("payment-authorization")?.optString("href")
                 ?: throw Exception("Authorization URL not found in orderDetails")
 
-            val paymentUrl = ((links["payment"] as? HashMap<String, Any>)?.get("href") as? String)
+            val paymentUrl = links.optJSONObject("payment")?.optString("href")
                 ?: throw Exception("Payment URL not found in orderDetails")
 
             savedCardPaymentLauncher?.let { launcher ->
-                val request = SavedCardPaymentRequest.builder()
+                val req = SavedCardPaymentRequest.builder()
                     .gatewayAuthorizationUrl(authUrl)
                     .payPageUrl(paymentUrl)
-                    .apply { cvv?.let { setCvv(it) } }
+                    .apply { request.cvv?.let { setCvv(it) } }
                     .build()
-                launcher.launch(request)
+                launcher.launch(req)
             } ?: throw IllegalStateException("Plugin is not attached to a ComponentActivity or the launcher could not be initialized.")
 
         } catch (e: Exception) {
-            pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
-            pendingResult = null
+            pendingCallback = null
+            callback(Result.failure(FlutterError("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)))
         }
     }
 
-    private fun handleSamsungPayPayment(call: MethodCall, result: Result) {
+    override fun startApplePay(
+        request: ApplePayRequest,
+        callback: (Result<PaymentResultData>) -> Unit
+    ) {
+        callback(Result.success(PaymentResultData("FAILED", "Apple Pay is only supported on iOS.")))
+    }
+
+    override fun startSamsungPay(
+        request: SamsungPayRequest,
+        callback: (Result<PaymentResultData>) -> Unit
+    ) {
         try {
-            if (pendingResult != null) {
-                result.error("ALREADY_ACTIVE", "A payment is already in progress.", null)
+            if (pendingCallback != null) {
+                callback(Result.failure(FlutterError("ALREADY_ACTIVE", "A payment is already in progress.", null)))
                 return
             }
-            pendingResult = result
+            pendingCallback = callback
 
-            val orderDetails = call.argument<HashMap<String, Any>>("orderDetails")
-                ?: throw IllegalArgumentException("orderDetails is required")
-            val samsungPayConfig = call.argument<HashMap<String, Any>>("samsungPayConfig")
-                ?: throw IllegalArgumentException("samsungPayConfig is required")
+            val json = JSONObject(request.orderDetailsJson)
+            val samsungPayConfig = request.samsungPayConfigMap
 
             val serviceId = samsungPayConfig["serviceId"] as? String
                 ?: throw IllegalArgumentException("serviceId is required for Samsung Pay")
@@ -159,21 +149,21 @@ class NetworkInternationalPaymentSdkPlugin:
                 samsungPayClient.isSamsungPayAvailable(object : com.samsung.android.sdk.samsungpay.v2.StatusListener {
                     override fun onSuccess(status: Int, bundle: android.os.Bundle?) {
                         if (status == com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_READY) {
-                            val order = createOrder(from = orderDetails)
+                            val order = createOrderFromJson(json)
                             samsungPayClient.startSamsungPay(order, merchantName, object : SamsungPayResponse {
                                 override fun onSuccess() {
-                                    val successResult = mapOf("status" to "SUCCESS", "reason" to "Samsung Pay payment successful")
+                                    val cb = pendingCallback
+                                    pendingCallback = null
                                     activity?.runOnUiThread {
-                                        pendingResult?.success(successResult)
-                                        pendingResult = null
+                                        cb?.invoke(Result.success(PaymentResultData("SUCCESS", "Samsung Pay payment successful")))
                                     }
                                 }
 
                                 override fun onFailure(error: String) {
-                                    val error1 = mapOf("status" to "FAILED", "reason" to error)
+                                    val cb = pendingCallback
+                                    pendingCallback = null
                                     activity?.runOnUiThread {
-                                        pendingResult?.success(error1)
-                                        pendingResult = null
+                                        cb?.invoke(Result.success(PaymentResultData("FAILED", error)))
                                     }
                                 }
                             })
@@ -183,31 +173,31 @@ class NetworkInternationalPaymentSdkPlugin:
                                 com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_NOT_SUPPORTED -> "This device does not support Samsung Pay."
                                 else -> "Samsung Pay is not available on this device. Status code: $status"
                             }
-                            val error = mapOf("status" to "FAILED", "reason" to reason)
+                            val cb = pendingCallback
+                            pendingCallback = null
                             activity?.runOnUiThread {
-                                pendingResult?.success(error)
-                                pendingResult = null
+                                cb?.invoke(Result.success(PaymentResultData("FAILED", reason)))
                             }
                         }
                     }
 
                     override fun onFail(errCode: Int, bundle: android.os.Bundle?) {
-                        val error = mapOf("status" to "FAILED", "reason" to "Samsung Pay status check failed with code: $errCode")
+                        val cb = pendingCallback
+                        pendingCallback = null
                         activity?.runOnUiThread {
-                            pendingResult?.success(error)
-                            pendingResult = null
+                            cb?.invoke(Result.success(PaymentResultData("FAILED", "Samsung Pay status check failed with code: $errCode")))
                         }
                     }
                 })
             } ?: throw IllegalStateException("Plugin is not attached to a valid activity")
 
         } catch (e: Exception) {
-            pendingResult?.error("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
-            pendingResult = null
+            pendingCallback = null
+            callback(Result.failure(FlutterError("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)))
         }
     }
 
-    private fun createGooglePayConfig(configMap: HashMap<String, Any>): GooglePayConfig {
+    private fun createGooglePayConfig(configMap: Map<String, Any>): GooglePayConfig {
         val environmentStr = configMap["environment"] as? String ?: "test"
         val merchantGatewayId = configMap["merchantGatewayId"] as? String
             ?: throw IllegalArgumentException("merchantGatewayId is required for Google Pay")
@@ -218,7 +208,8 @@ class NetworkInternationalPaymentSdkPlugin:
             GooglePayConfig.Environment.Test
         }
 
-        val billingAddressConfigMap = configMap["billingAddressConfig"] as? HashMap<String, Any>
+        @Suppress("UNCHECKED_CAST")
+        val billingAddressConfigMap = configMap["billingAddressConfig"] as? Map<String, Any>
         val isRequired = billingAddressConfigMap?.get("isRequired") as? Boolean ?: false
         val isPhoneNumberRequired = billingAddressConfigMap?.get("isPhoneNumberRequired") as? Boolean ?: false
         val formatStr = billingAddressConfigMap?.get("format") as? String ?: "min"
@@ -227,13 +218,13 @@ class NetworkInternationalPaymentSdkPlugin:
         } else {
             GooglePayConfig.Format.Min
         }
-        
+
         val billingAddressConfig = GooglePayConfig.BillingAddressConfig(
             isRequired,
             format,
             isPhoneNumberRequired
         )
-        
+
         return GooglePayConfig(
             environment = environment,
             merchantGatewayId = merchantGatewayId,
@@ -242,26 +233,26 @@ class NetworkInternationalPaymentSdkPlugin:
         )
     }
 
-    private fun createOrder(from: HashMap<String, Any>): Order {
+    private fun createOrderFromJson(from: JSONObject): Order {
         val order = Order()
-        (from["reference"] as? String)?.let { order.reference = it }
-        (from["outletId"] as? String)?.let { order.outletId = it }
-        (from["amount"] as? HashMap<String, Any>)?.let {
+        if (from.has("reference")) order.reference = from.optString("reference")
+        if (from.has("outletId")) order.outletId = from.optString("outletId")
+        from.optJSONObject("amount")?.let {
             val amount = Order.Amount()
-            amount.value = it["value"] as? Double
-            amount.currencyCode = it["currencyCode"] as? String
+            amount.value = it.optDouble("value")
+            amount.currencyCode = it.optString("currencyCode")
             order.amount = amount
         }
-        (from["_links"] as? HashMap<String, Any>)?.let {
+        from.optJSONObject("_links")?.let {
             val links = Order.Links()
-            (it["payment-authorization"] as? HashMap<String, String>)?.let {
+            it.optJSONObject("payment-authorization")?.let { auth ->
                 val href = Order.Href()
-                href.href = it["href"]
+                href.href = auth.optString("href")
                 links.paymentAuthorizationUrl = href
             }
-            (it["payment"] as? HashMap<String, String>)?.let {
+            it.optJSONObject("payment")?.let { pay ->
                 val href = Order.Href()
-                href.href = it["href"]
+                href.href = pay.optString("href")
                 links.paymentUrl = href
             }
             order.links = links
@@ -270,29 +261,25 @@ class NetworkInternationalPaymentSdkPlugin:
     }
 
     private fun handlePaymentResult(paymentResult: PaymentsResult) {
-        val result = pendingResult
-        pendingResult = null
-        if (result == null) return
+        val cb = pendingCallback
+        pendingCallback = null
+        if (cb == null) return
 
-        val resultMap = when (paymentResult) {
-            is PaymentsResult.Success -> mapOf("status" to "SUCCESS", "reason" to "Payment was successful")
-            is PaymentsResult.Authorised -> mapOf("status" to "AUTHORISED", "reason" to "Payment was authorised")
-            is PaymentsResult.Failed -> mapOf("status" to "FAILED", "reason" to paymentResult.error)
-            is PaymentsResult.Cancelled -> mapOf("status" to "CANCELLED", "reason" to "Payment was cancelled by the user")
-            is PaymentsResult.PostAuthReview -> mapOf("status" to "POST_AUTH_REVIEW", "reason" to "Payment requires post-authorization review")
-            is PaymentsResult.PartialAuthDeclined -> mapOf("status" to "PARTIAL_AUTH_DECLINED", "reason" to "Partial authorization was declined")
-            is PaymentsResult.PartialAuthDeclineFailed -> mapOf("status" to "PARTIAL_AUTH_DECLINE_FAILED", "reason" to "Partial authorization decline failed")
-            is PaymentsResult.PartiallyAuthorised -> mapOf("status" to "PARTIALLY_AUTHORISED", "reason" to "Payment was partially authorised")
-            else -> mapOf("status" to "UNKNOWN", "reason" to "An unknown payment status was received")
+        val resultData = when (paymentResult) {
+            is PaymentsResult.Success -> PaymentResultData("SUCCESS", "Payment was successful")
+            is PaymentsResult.Authorised -> PaymentResultData("AUTHORISED", "Payment was authorised")
+            is PaymentsResult.Failed -> PaymentResultData("FAILED", paymentResult.error)
+            is PaymentsResult.Cancelled -> PaymentResultData("CANCELLED", "Payment was cancelled by the user")
+            is PaymentsResult.PostAuthReview -> PaymentResultData("POST_AUTH_REVIEW", "Payment requires post-authorization review")
+            is PaymentsResult.PartialAuthDeclined -> PaymentResultData("PARTIAL_AUTH_DECLINED", "Partial authorization was declined")
+            is PaymentsResult.PartialAuthDeclineFailed -> PaymentResultData("PARTIAL_AUTH_DECLINE_FAILED", "Partial authorization decline failed")
+            is PaymentsResult.PartiallyAuthorised -> PaymentResultData("PARTIALLY_AUTHORISED", "Payment was partially authorised")
+            else -> PaymentResultData("UNKNOWN", "An unknown payment status was received")
         }
 
         activity?.runOnUiThread {
-            result.success(resultMap)
+            cb.invoke(Result.success(resultData))
         }
-    }
-
-    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        channel.setMethodCallHandler(null)
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {

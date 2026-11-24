@@ -1,5 +1,6 @@
 ## 1.6.11
 
+* FLUTTER: Upgraded minimum supported Flutter version to 3.5.0 with Direct Native Interoperability support.
 * IOS: Updated iOS native dependency `NISdk` to `6.1.6`.
 * ANDROID: Updated Android native dependency `payment-sdk-android` to `5.2.7`.
 

@@ -1,13 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-
 import 'network_international_payment_sdk_platform_interface.dart';
+import 'src/messages.g.dart';
 
-/// An implementation of [NetworkInternationalPaymentSdkPlatform] that uses method channels.
+/// An implementation of [NetworkInternationalPaymentSdkPlatform] that uses Pigeon native interop.
 class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPaymentSdkPlatform {
-  /// The method channel used to interact with the native platform.
   @visibleForTesting
-  final methodChannel = const MethodChannel('network_international_payment_sdk');
+  final NetworkInternationalPaymentSdkApi api = NetworkInternationalPaymentSdkApi();
 
   @override
   Future<Map<dynamic, dynamic>?> startCardPayment({
@@ -17,14 +16,16 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
     Map<String, dynamic>? theme,
     Map<String, dynamic>? googlePayConfig,
   }) async {
-    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startCardPayment', {
-      'orderDetails': orderDetails,
-      'showOrderAmount': showOrderAmount,
-      'showCancelAlert': showCancelAlert,
-      'theme': theme,
-      'googlePayConfig': googlePayConfig,
-    });
-    return result;
+    final response = await api.startCardPayment(
+      CardPaymentRequest(
+        orderDetailsJson: jsonEncode(orderDetails),
+        showOrderAmount: showOrderAmount,
+        showCancelAlert: showCancelAlert,
+        themeMap: theme?.cast<String?, String?>(),
+        googlePayConfigMap: googlePayConfig?.cast<String?, Object?>(),
+      ),
+    );
+    return {'status': response.status, 'reason': response.reason};
   }
 
   @override
@@ -33,12 +34,14 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
     String? cvv,
     Map<String, dynamic>? theme,
   }) async {
-    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startSavedCardPayment', {
-      'orderDetails': orderDetails,
-      'cvv': cvv,
-      'theme': theme,
-    });
-    return result;
+    final response = await api.startSavedCardPayment(
+      SavedCardPaymentRequest(
+        orderDetailsJson: jsonEncode(orderDetails),
+        cvv: cvv,
+        themeMap: theme?.cast<String?, String?>(),
+      ),
+    );
+    return {'status': response.status, 'reason': response.reason};
   }
 
   @override
@@ -47,12 +50,14 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
     required Map<String, dynamic> applePayConfig,
     Map<String, dynamic>? theme,
   }) async {
-    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startApplePay', {
-      'orderDetails': orderDetails,
-      'applePayConfig': applePayConfig,
-      'theme': theme,
-    });
-    return result;
+    final response = await api.startApplePay(
+      ApplePayRequest(
+        orderDetailsJson: jsonEncode(orderDetails),
+        applePayConfigMap: applePayConfig.cast<String?, Object?>(),
+        themeMap: theme?.cast<String?, String?>(),
+      ),
+    );
+    return {'status': response.status, 'reason': response.reason};
   }
 
   @override
@@ -60,10 +65,12 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
     required Map<String, dynamic> orderDetails,
     required Map<String, dynamic> samsungPayConfig,
   }) async {
-    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('startSamsungPay', {
-      'orderDetails': orderDetails,
-      'samsungPayConfig': samsungPayConfig,
-    });
-    return result;
+    final response = await api.startSamsungPay(
+      SamsungPayRequest(
+        orderDetailsJson: jsonEncode(orderDetails),
+        samsungPayConfigMap: samsungPayConfig.cast<String?, Object?>(),
+      ),
+    );
+    return {'status': response.status, 'reason': response.reason};
   }
 }

@@ -1,64 +1,50 @@
 package com.enoc.network_international_payment_sdk
 
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.Mockito
 import kotlin.test.Test
-
-/*
- * This demonstrates a simple unit test of the Kotlin portion of this plugin's implementation.
- */
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 internal class NetworkInternationalPaymentSdkPluginTest {
 
     @Test
-    fun onMethodCall_unknownMethod_returnsNotImplemented() {
+    fun startCardPayment_withoutOrderDetails_returnsError() {
         val plugin = NetworkInternationalPaymentSdkPlugin()
+        val request = CardPaymentRequest(orderDetailsJson = "{}")
 
-        val call = MethodCall("someUnknownMethod", null)
-        val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
-        
-        plugin.onMethodCall(call, mockResult)
+        var errorReceived: Throwable? = null
+        plugin.startCardPayment(request) { result ->
+            errorReceived = result.exceptionOrNull()
+        }
 
-        Mockito.verify(mockResult).notImplemented()
+        assertTrue(errorReceived is FlutterError)
+        assertEquals("LAUNCH_ERROR", (errorReceived as FlutterError).code)
     }
 
     @Test
-    fun onMethodCall_startCardPayment_withoutOrderDetails_returnsError() {
+    fun startSavedCardPayment_withoutOrderDetails_returnsError() {
         val plugin = NetworkInternationalPaymentSdkPlugin()
+        val request = SavedCardPaymentRequest(orderDetailsJson = "{}")
 
-        val call = MethodCall("startCardPayment", mapOf<String, Any>())
-        val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
-        
-        plugin.onMethodCall(call, mockResult)
+        var errorReceived: Throwable? = null
+        plugin.startSavedCardPayment(request) { result ->
+            errorReceived = result.exceptionOrNull()
+        }
 
-        Mockito.verify(mockResult).error(eq("LAUNCH_ERROR"), eq("orderDetails is required"), any())
+        assertTrue(errorReceived is FlutterError)
+        assertEquals("LAUNCH_ERROR", (errorReceived as FlutterError).code)
     }
 
     @Test
-    fun onMethodCall_startSavedCardPayment_withoutOrderDetails_returnsError() {
+    fun startApplePay_returnsFailedOnAndroid() {
         val plugin = NetworkInternationalPaymentSdkPlugin()
+        val request = ApplePayRequest(orderDetailsJson = "{}", applePayConfigMap = emptyMap())
 
-        val call = MethodCall("startSavedCardPayment", mapOf<String, Any>())
-        val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
-        
-        plugin.onMethodCall(call, mockResult)
+        var resultData: PaymentResultData? = null
+        plugin.startApplePay(request) { result ->
+            resultData = result.getOrNull()
+        }
 
-        Mockito.verify(mockResult).error(eq("LAUNCH_ERROR"), eq("orderDetails is required"), any())
+        assertEquals("FAILED", resultData?.status)
+        assertEquals("Apple Pay is only supported on iOS.", resultData?.reason)
     }
-
-    @Test
-    fun onMethodCall_startSamsungPay_withoutOrderDetails_returnsError() {
-        val plugin = NetworkInternationalPaymentSdkPlugin()
-
-        val call = MethodCall("startSamsungPay", mapOf<String, Any>())
-        val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
-        
-        plugin.onMethodCall(call, mockResult)
-
-        Mockito.verify(mockResult).error(eq("LAUNCH_ERROR"), eq("orderDetails is required"), any())
-    }
-
 }
