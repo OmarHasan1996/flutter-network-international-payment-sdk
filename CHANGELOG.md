@@ -1,3 +1,7 @@
+## 1.6.12
+
+* Fix 1.6.11 issues
+
 ## 1.6.11
 
 * FLUTTER: Upgraded minimum supported Flutter version to 3.5.0 with Direct Native Interoperability support.
