@@ -244,7 +244,7 @@ data class CardPaymentRequest (
   val orderDetailsJson: String,
   val showOrderAmount: Boolean? = null,
   val showCancelAlert: Boolean? = null,
-  val themeMap: Map<String?, String?>? = null,
+  val themeMap: Map<String?, Any?>? = null,
   val googlePayConfigMap: Map<String?, Any?>? = null
 )
  {
@@ -253,7 +253,7 @@ data class CardPaymentRequest (
       val orderDetailsJson = pigeonVar_list[0] as String
       val showOrderAmount = pigeonVar_list[1] as Boolean?
       val showCancelAlert = pigeonVar_list[2] as Boolean?
-      val themeMap = pigeonVar_list[3] as Map<String?, String?>?
+      val themeMap = pigeonVar_list[3] as Map<String?, Any?>?
       val googlePayConfigMap = pigeonVar_list[4] as Map<String?, Any?>?
       return CardPaymentRequest(orderDetailsJson, showOrderAmount, showCancelAlert, themeMap, googlePayConfigMap)
     }
@@ -296,14 +296,14 @@ data class CardPaymentRequest (
 data class SavedCardPaymentRequest (
   val orderDetailsJson: String,
   val cvv: String? = null,
-  val themeMap: Map<String?, String?>? = null
+  val themeMap: Map<String?, Any?>? = null
 )
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): SavedCardPaymentRequest {
       val orderDetailsJson = pigeonVar_list[0] as String
       val cvv = pigeonVar_list[1] as String?
-      val themeMap = pigeonVar_list[2] as Map<String?, String?>?
+      val themeMap = pigeonVar_list[2] as Map<String?, Any?>?
       return SavedCardPaymentRequest(orderDetailsJson, cvv, themeMap)
     }
   }
@@ -341,14 +341,14 @@ data class SavedCardPaymentRequest (
 data class ApplePayRequest (
   val orderDetailsJson: String,
   val applePayConfigMap: Map<String?, Any?>,
-  val themeMap: Map<String?, String?>? = null
+  val themeMap: Map<String?, Any?>? = null
 )
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): ApplePayRequest {
       val orderDetailsJson = pigeonVar_list[0] as String
       val applePayConfigMap = pigeonVar_list[1] as Map<String?, Any?>
-      val themeMap = pigeonVar_list[2] as Map<String?, String?>?
+      val themeMap = pigeonVar_list[2] as Map<String?, Any?>?
       return ApplePayRequest(orderDetailsJson, applePayConfigMap, themeMap)
     }
   }

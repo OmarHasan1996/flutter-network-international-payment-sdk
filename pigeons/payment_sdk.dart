@@ -21,7 +21,7 @@ class CardPaymentRequest {
   final String orderDetailsJson;
   final bool? showOrderAmount;
   final bool? showCancelAlert;
-  final Map<String?, String?>? themeMap;
+  final Map<String?, Object?>? themeMap;
   final Map<String?, Object?>? googlePayConfigMap;
 
   CardPaymentRequest({
@@ -36,7 +36,7 @@ class CardPaymentRequest {
 class SavedCardPaymentRequest {
   final String orderDetailsJson;
   final String? cvv;
-  final Map<String?, String?>? themeMap;
+  final Map<String?, Object?>? themeMap;
 
   SavedCardPaymentRequest({
     required this.orderDetailsJson,
@@ -48,7 +48,7 @@ class SavedCardPaymentRequest {
 class ApplePayRequest {
   final String orderDetailsJson;
   final Map<String?, Object?> applePayConfigMap;
-  final Map<String?, String?>? themeMap;
+  final Map<String?, Object?>? themeMap;
 
   ApplePayRequest({
     required this.orderDetailsJson,

@@ -7,6 +7,8 @@ import androidx.core.view.WindowCompat
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.json.JSONObject
 import payment.sdk.android.SDKConfig
 import payment.sdk.android.core.Order
@@ -18,7 +20,9 @@ import payment.sdk.android.payments.PaymentsResult
 import payment.sdk.android.samsungpay.SamsungPayClient
 import payment.sdk.android.samsungpay.SamsungPayResponse
 import payment.sdk.android.savedCard.SavedCardPaymentLauncher
-import payment.sdk.android.savedCard.SavedCardPaymentRequest
+import payment.sdk.android.savedCard.SavedCardPaymentRequest as SdkSavedCardPaymentRequest
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class NetworkInternationalPaymentSdkPlugin :
     FlutterPlugin,
@@ -26,7 +30,7 @@ class NetworkInternationalPaymentSdkPlugin :
     NetworkInternationalPaymentSdkApi {
 
     private var activity: Activity? = null
-    private var pendingCallback: ((Result<PaymentResultData>) -> Unit)? = null
+    private var pendingContinuation: CancellableContinuation<PaymentResultData>? = null
 
     private var paymentsLauncher: PaymentsLauncher? = null
     private var savedCardPaymentLauncher: SavedCardPaymentLauncher? = null
@@ -39,163 +43,163 @@ class NetworkInternationalPaymentSdkPlugin :
         NetworkInternationalPaymentSdkApi.setUp(binding.binaryMessenger, null)
     }
 
-    override fun startCardPayment(
-        request: CardPaymentRequest,
-        callback: (Result<PaymentResultData>) -> Unit
-    ) {
-        try {
-            if (pendingCallback != null) {
-                callback(Result.failure(FlutterError("ALREADY_ACTIVE", "A payment is already in progress.", null)))
-                return
+    override suspend fun startCardPayment(request: CardPaymentRequest): PaymentResultData =
+        suspendCancellableCoroutine { continuation ->
+            if (pendingContinuation != null) {
+                continuation.resumeWithException(
+                    FlutterError("ALREADY_ACTIVE", "A payment is already in progress.", null)
+                )
+                return@suspendCancellableCoroutine
             }
-            pendingCallback = callback
+            pendingContinuation = continuation
 
-            SDKConfig.shouldShowOrderAmount(request.showOrderAmount ?: true)
-            SDKConfig.shouldShowCancelAlert(request.showCancelAlert ?: true)
+            try {
+                SDKConfig.shouldShowOrderAmount(request.showOrderAmount ?: true)
+                SDKConfig.shouldShowCancelAlert(request.showCancelAlert ?: true)
 
-            val json = JSONObject(request.orderDetailsJson)
-            val links = json.optJSONObject("_links")
-                ?: throw Exception("_links not found in orderDetails")
+                val json = JSONObject(request.orderDetailsJson)
+                val links = json.optJSONObject("_links")
+                    ?: throw Exception("_links not found in orderDetails")
 
-            val authUrl = links.optJSONObject("payment-authorization")?.optString("href")
-                ?: throw Exception("Authorization URL not found in orderDetails")
+                val authUrl = links.optJSONObject("payment-authorization")?.optString("href")
+                    ?: throw Exception("Authorization URL not found in orderDetails")
 
-            val paymentUrl = links.optJSONObject("payment")?.optString("href")
-                ?: throw Exception("Payment URL not found in orderDetails")
+                val paymentUrl = links.optJSONObject("payment")?.optString("href")
+                    ?: throw Exception("Payment URL not found in orderDetails")
 
-            paymentsLauncher?.let { launcher ->
-                val requestBuilder = PaymentsRequest.builder()
-                    .gatewayAuthorizationUrl(authUrl)
-                    .payPageUrl(paymentUrl)
+                paymentsLauncher?.let { launcher ->
+                    val requestBuilder = PaymentsRequest.builder()
+                        .gatewayAuthorizationUrl(authUrl)
+                        .payPageUrl(paymentUrl)
 
-                request.googlePayConfigMap?.let { map ->
-                    @Suppress("UNCHECKED_CAST")
-                    requestBuilder.setGooglePayConfig(createGooglePayConfig(map as Map<String, Any>))
-                }
-
-                launcher.launch(requestBuilder.build())
-            } ?: throw IllegalStateException("Plugin is not attached to a ComponentActivity or the launcher could not be initialized.")
-
-        } catch (e: Exception) {
-            pendingCallback = null
-            callback(Result.failure(FlutterError("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)))
-        }
-    }
-
-    override fun startSavedCardPayment(
-        request: SavedCardPaymentRequest,
-        callback: (Result<PaymentResultData>) -> Unit
-    ) {
-        try {
-            if (pendingCallback != null) {
-                callback(Result.failure(FlutterError("ALREADY_ACTIVE", "A payment is already in progress.", null)))
-                return
-            }
-            pendingCallback = callback
-
-            val json = JSONObject(request.orderDetailsJson)
-            val links = json.optJSONObject("_links")
-                ?: throw Exception("_links not found in orderDetails")
-
-            val authUrl = links.optJSONObject("payment-authorization")?.optString("href")
-                ?: throw Exception("Authorization URL not found in orderDetails")
-
-            val paymentUrl = links.optJSONObject("payment")?.optString("href")
-                ?: throw Exception("Payment URL not found in orderDetails")
-
-            savedCardPaymentLauncher?.let { launcher ->
-                val req = SavedCardPaymentRequest.builder()
-                    .gatewayAuthorizationUrl(authUrl)
-                    .payPageUrl(paymentUrl)
-                    .apply { request.cvv?.let { setCvv(it) } }
-                    .build()
-                launcher.launch(req)
-            } ?: throw IllegalStateException("Plugin is not attached to a ComponentActivity or the launcher could not be initialized.")
-
-        } catch (e: Exception) {
-            pendingCallback = null
-            callback(Result.failure(FlutterError("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)))
-        }
-    }
-
-    override fun startApplePay(
-        request: ApplePayRequest,
-        callback: (Result<PaymentResultData>) -> Unit
-    ) {
-        callback(Result.success(PaymentResultData("FAILED", "Apple Pay is only supported on iOS.")))
-    }
-
-    override fun startSamsungPay(
-        request: SamsungPayRequest,
-        callback: (Result<PaymentResultData>) -> Unit
-    ) {
-        try {
-            if (pendingCallback != null) {
-                callback(Result.failure(FlutterError("ALREADY_ACTIVE", "A payment is already in progress.", null)))
-                return
-            }
-            pendingCallback = callback
-
-            val json = JSONObject(request.orderDetailsJson)
-            val samsungPayConfig = request.samsungPayConfigMap
-
-            val serviceId = samsungPayConfig["serviceId"] as? String
-                ?: throw IllegalArgumentException("serviceId is required for Samsung Pay")
-            val merchantName = samsungPayConfig["merchantName"] as? String
-                ?: throw IllegalArgumentException("merchantName is required for Samsung Pay")
-
-            activity?.let { currentActivity ->
-                val samsungPayClient = SamsungPayClient(currentActivity, serviceId, CoroutinesGatewayHttpClient())
-                samsungPayClient.isSamsungPayAvailable(object : com.samsung.android.sdk.samsungpay.v2.StatusListener {
-                    override fun onSuccess(status: Int, bundle: android.os.Bundle?) {
-                        if (status == com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_READY) {
-                            val order = createOrderFromJson(json)
-                            samsungPayClient.startSamsungPay(order, merchantName, object : SamsungPayResponse {
-                                override fun onSuccess() {
-                                    val cb = pendingCallback
-                                    pendingCallback = null
-                                    activity?.runOnUiThread {
-                                        cb?.invoke(Result.success(PaymentResultData("SUCCESS", "Samsung Pay payment successful")))
-                                    }
-                                }
-
-                                override fun onFailure(error: String) {
-                                    val cb = pendingCallback
-                                    pendingCallback = null
-                                    activity?.runOnUiThread {
-                                        cb?.invoke(Result.success(PaymentResultData("FAILED", error)))
-                                    }
-                                }
-                            })
-                        } else {
-                            val reason = when (status) {
-                                com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_NOT_READY -> "Samsung Pay is installed but not set up. Please add a card."
-                                com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_NOT_SUPPORTED -> "This device does not support Samsung Pay."
-                                else -> "Samsung Pay is not available on this device. Status code: $status"
-                            }
-                            val cb = pendingCallback
-                            pendingCallback = null
-                            activity?.runOnUiThread {
-                                cb?.invoke(Result.success(PaymentResultData("FAILED", reason)))
-                            }
-                        }
+                    request.googlePayConfigMap?.let { map ->
+                        @Suppress("UNCHECKED_CAST")
+                        requestBuilder.setGooglePayConfig(createGooglePayConfig(map as Map<String, Any>))
                     }
 
-                    override fun onFail(errCode: Int, bundle: android.os.Bundle?) {
-                        val cb = pendingCallback
-                        pendingCallback = null
-                        activity?.runOnUiThread {
-                            cb?.invoke(Result.success(PaymentResultData("FAILED", "Samsung Pay status check failed with code: $errCode")))
-                        }
-                    }
-                })
-            } ?: throw IllegalStateException("Plugin is not attached to a valid activity")
-
-        } catch (e: Exception) {
-            pendingCallback = null
-            callback(Result.failure(FlutterError("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)))
+                    launcher.launch(requestBuilder.build())
+                } ?: throw IllegalStateException("Plugin is not attached to a ComponentActivity or the launcher could not be initialized.")
+            } catch (e: Exception) {
+                pendingContinuation = null
+                continuation.resumeWithException(
+                    FlutterError("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
+                )
+            }
         }
+
+    override suspend fun startSavedCardPayment(request: SavedCardPaymentRequest): PaymentResultData =
+        suspendCancellableCoroutine { continuation ->
+            if (pendingContinuation != null) {
+                continuation.resumeWithException(
+                    FlutterError("ALREADY_ACTIVE", "A payment is already in progress.", null)
+                )
+                return@suspendCancellableCoroutine
+            }
+            pendingContinuation = continuation
+
+            try {
+                val json = JSONObject(request.orderDetailsJson)
+                val links = json.optJSONObject("_links")
+                    ?: throw Exception("_links not found in orderDetails")
+
+                val authUrl = links.optJSONObject("payment-authorization")?.optString("href")
+                    ?: throw Exception("Authorization URL not found in orderDetails")
+
+                val paymentUrl = links.optJSONObject("payment")?.optString("href")
+                    ?: throw Exception("Payment URL not found in orderDetails")
+
+                savedCardPaymentLauncher?.let { launcher ->
+                    val req = SdkSavedCardPaymentRequest.builder()
+                        .gatewayAuthorizationUrl(authUrl)
+                        .payPageUrl(paymentUrl)
+                        .apply { request.cvv?.let { setCvv(it) } }
+                        .build()
+                    launcher.launch(req)
+                } ?: throw IllegalStateException("Plugin is not attached to a ComponentActivity or the launcher could not be initialized.")
+            } catch (e: Exception) {
+                pendingContinuation = null
+                continuation.resumeWithException(
+                    FlutterError("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
+                )
+            }
+        }
+
+    override suspend fun startApplePay(request: ApplePayRequest): PaymentResultData {
+        return PaymentResultData("FAILED", "Apple Pay is only supported on iOS.")
     }
+
+    override suspend fun startSamsungPay(request: SamsungPayRequest): PaymentResultData =
+        suspendCancellableCoroutine { continuation ->
+            if (pendingContinuation != null) {
+                continuation.resumeWithException(
+                    FlutterError("ALREADY_ACTIVE", "A payment is already in progress.", null)
+                )
+                return@suspendCancellableCoroutine
+            }
+            pendingContinuation = continuation
+
+            try {
+                val json = JSONObject(request.orderDetailsJson)
+                val samsungPayConfig = request.samsungPayConfigMap
+
+                val serviceId = samsungPayConfig["serviceId"] as? String
+                    ?: throw IllegalArgumentException("serviceId is required for Samsung Pay")
+                val merchantName = samsungPayConfig["merchantName"] as? String
+                    ?: throw IllegalArgumentException("merchantName is required for Samsung Pay")
+
+                activity?.let { currentActivity ->
+                    val samsungPayClient = SamsungPayClient(currentActivity, serviceId, CoroutinesGatewayHttpClient())
+                    samsungPayClient.isSamsungPayAvailable(object : com.samsung.android.sdk.samsungpay.v2.StatusListener {
+                        override fun onSuccess(status: Int, bundle: android.os.Bundle?) {
+                            if (status == com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_READY) {
+                                val order = createOrderFromJson(json)
+                                samsungPayClient.startSamsungPay(order, merchantName, object : SamsungPayResponse {
+                                    override fun onSuccess() {
+                                        val cont = pendingContinuation
+                                        pendingContinuation = null
+                                        if (cont?.isActive == true) {
+                                            cont.resume(PaymentResultData("SUCCESS", "Samsung Pay payment successful"))
+                                        }
+                                    }
+
+                                    override fun onFailure(error: String) {
+                                        val cont = pendingContinuation
+                                        pendingContinuation = null
+                                        if (cont?.isActive == true) {
+                                            cont.resume(PaymentResultData("FAILED", error))
+                                        }
+                                    }
+                                })
+                            } else {
+                                val reason = when (status) {
+                                    com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_NOT_READY -> "Samsung Pay is installed but not set up. Please add a card."
+                                    com.samsung.android.sdk.samsungpay.v2.SamsungPay.SPAY_NOT_SUPPORTED -> "This device does not support Samsung Pay."
+                                    else -> "Samsung Pay is not available on this device. Status code: $status"
+                                }
+                                val cont = pendingContinuation
+                                pendingContinuation = null
+                                if (cont?.isActive == true) {
+                                    cont.resume(PaymentResultData("FAILED", reason))
+                                }
+                            }
+                        }
+
+                        override fun onFail(errCode: Int, bundle: android.os.Bundle?) {
+                            val cont = pendingContinuation
+                            pendingContinuation = null
+                            if (cont?.isActive == true) {
+                                cont.resume(PaymentResultData("FAILED", "Samsung Pay status check failed with code: $errCode"))
+                            }
+                        }
+                    })
+                } ?: throw IllegalStateException("Plugin is not attached to a valid activity")
+            } catch (e: Exception) {
+                pendingContinuation = null
+                continuation.resumeWithException(
+                    FlutterError("LAUNCH_ERROR", e.message ?: "An unknown error occurred", e.localizedMessage)
+                )
+            }
+        }
 
     private fun createGooglePayConfig(configMap: Map<String, Any>): GooglePayConfig {
         val environmentStr = configMap["environment"] as? String ?: "test"
@@ -261,9 +265,9 @@ class NetworkInternationalPaymentSdkPlugin :
     }
 
     private fun handlePaymentResult(paymentResult: PaymentsResult) {
-        val cb = pendingCallback
-        pendingCallback = null
-        if (cb == null) return
+        val cont = pendingContinuation
+        pendingContinuation = null
+        if (cont == null || !cont.isActive) return
 
         val resultData = when (paymentResult) {
             is PaymentsResult.Success -> PaymentResultData("SUCCESS", "Payment was successful")
@@ -278,7 +282,9 @@ class NetworkInternationalPaymentSdkPlugin :
         }
 
         activity?.runOnUiThread {
-            cb.invoke(Result.success(resultData))
+            if (cont.isActive) {
+                cont.resume(resultData)
+            }
         }
     }
 

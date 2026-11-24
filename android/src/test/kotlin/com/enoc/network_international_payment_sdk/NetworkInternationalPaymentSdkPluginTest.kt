@@ -1,50 +1,44 @@
 package com.enoc.network_international_payment_sdk
 
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 internal class NetworkInternationalPaymentSdkPluginTest {
 
     @Test
-    fun startCardPayment_withoutOrderDetails_returnsError() {
+    fun startCardPayment_withoutOrderDetails_returnsError() = runBlocking {
         val plugin = NetworkInternationalPaymentSdkPlugin()
         val request = CardPaymentRequest(orderDetailsJson = "{}")
 
-        var errorReceived: Throwable? = null
-        plugin.startCardPayment(request) { result ->
-            errorReceived = result.exceptionOrNull()
+        val error = assertFailsWith<FlutterError> {
+            plugin.startCardPayment(request)
         }
 
-        assertTrue(errorReceived is FlutterError)
-        assertEquals("LAUNCH_ERROR", (errorReceived as FlutterError).code)
+        assertEquals("LAUNCH_ERROR", error.code)
     }
 
     @Test
-    fun startSavedCardPayment_withoutOrderDetails_returnsError() {
+    fun startSavedCardPayment_withoutOrderDetails_returnsError() = runBlocking {
         val plugin = NetworkInternationalPaymentSdkPlugin()
         val request = SavedCardPaymentRequest(orderDetailsJson = "{}")
 
-        var errorReceived: Throwable? = null
-        plugin.startSavedCardPayment(request) { result ->
-            errorReceived = result.exceptionOrNull()
+        val error = assertFailsWith<FlutterError> {
+            plugin.startSavedCardPayment(request)
         }
 
-        assertTrue(errorReceived is FlutterError)
-        assertEquals("LAUNCH_ERROR", (errorReceived as FlutterError).code)
+        assertEquals("LAUNCH_ERROR", error.code)
     }
 
     @Test
-    fun startApplePay_returnsFailedOnAndroid() {
+    fun startApplePay_returnsFailedOnAndroid() = runBlocking {
         val plugin = NetworkInternationalPaymentSdkPlugin()
         val request = ApplePayRequest(orderDetailsJson = "{}", applePayConfigMap = emptyMap())
 
-        var resultData: PaymentResultData? = null
-        plugin.startApplePay(request) { result ->
-            resultData = result.getOrNull()
-        }
+        val resultData = plugin.startApplePay(request)
 
-        assertEquals("FAILED", resultData?.status)
-        assertEquals("Apple Pay is only supported on iOS.", resultData?.reason)
+        assertEquals("FAILED", resultData.status)
+        assertEquals("Apple Pay is only supported on iOS.", resultData.reason)
     }
 }

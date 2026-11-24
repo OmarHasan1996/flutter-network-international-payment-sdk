@@ -7,7 +7,7 @@ import 'dart:async';
 import 'dart:typed_data' show Float64List, Int32List, Int64List;
 
 import 'package:flutter/services.dart';
-// import 'package:meta/meta.dart' show immutable, protected, visibleForTesting;
+import 'package:meta/meta.dart' show immutable, protected, visibleForTesting;
 
 Object? _extractReplyValueOrThrow(
     List<Object?>? replyList,
@@ -162,7 +162,7 @@ class CardPaymentRequest {
 
   bool? showCancelAlert;
 
-  Map<String?, String?>? themeMap;
+  Map<String?, Object?>? themeMap;
 
   Map<String?, Object?>? googlePayConfigMap;
 
@@ -185,7 +185,7 @@ class CardPaymentRequest {
       orderDetailsJson: result[0]! as String,
       showOrderAmount: result[1] as bool?,
       showCancelAlert: result[2] as bool?,
-      themeMap: (result[3] as Map<Object?, Object?>?)?.cast<String?, String?>(),
+      themeMap: (result[3] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
       googlePayConfigMap: (result[4] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
     );
   }
@@ -223,7 +223,7 @@ class SavedCardPaymentRequest {
 
   String? cvv;
 
-  Map<String?, String?>? themeMap;
+  Map<String?, Object?>? themeMap;
 
   List<Object?> _toList() {
     return <Object?>[
@@ -241,7 +241,7 @@ class SavedCardPaymentRequest {
     return SavedCardPaymentRequest(
       orderDetailsJson: result[0]! as String,
       cvv: result[1] as String?,
-      themeMap: (result[2] as Map<Object?, Object?>?)?.cast<String?, String?>(),
+      themeMap: (result[2] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
     );
   }
 
@@ -278,7 +278,7 @@ class ApplePayRequest {
 
   Map<String?, Object?> applePayConfigMap;
 
-  Map<String?, String?>? themeMap;
+  Map<String?, Object?>? themeMap;
 
   List<Object?> _toList() {
     return <Object?>[
@@ -296,7 +296,7 @@ class ApplePayRequest {
     return ApplePayRequest(
       orderDetailsJson: result[0]! as String,
       applePayConfigMap: (result[1]! as Map<Object?, Object?>).cast<String?, Object?>(),
-      themeMap: (result[2] as Map<Object?, Object?>?)?.cast<String?, String?>(),
+      themeMap: (result[2] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
     );
   }
 

@@ -21,7 +21,7 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
         orderDetailsJson: jsonEncode(orderDetails),
         showOrderAmount: showOrderAmount,
         showCancelAlert: showCancelAlert,
-        themeMap: theme?.cast<String?, String?>(),
+        themeMap: theme?.cast<String?, Object?>(),
         googlePayConfigMap: googlePayConfig?.cast<String?, Object?>(),
       ),
     );
@@ -38,7 +38,7 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
       SavedCardPaymentRequest(
         orderDetailsJson: jsonEncode(orderDetails),
         cvv: cvv,
-        themeMap: theme?.cast<String?, String?>(),
+        themeMap: theme?.cast<String?, Object?>(),
       ),
     );
     return {'status': response.status, 'reason': response.reason};
@@ -54,7 +54,7 @@ class MethodChannelNetworkInternationalPaymentSdk extends NetworkInternationalPa
       ApplePayRequest(
         orderDetailsJson: jsonEncode(orderDetails),
         applePayConfigMap: applePayConfig.cast<String?, Object?>(),
-        themeMap: theme?.cast<String?, String?>(),
+        themeMap: theme?.cast<String?, Object?>(),
       ),
     );
     return {'status': response.status, 'reason': response.reason};
