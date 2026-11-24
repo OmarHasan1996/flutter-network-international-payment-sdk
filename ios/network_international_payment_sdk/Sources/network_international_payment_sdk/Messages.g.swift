@@ -229,7 +229,7 @@ struct CardPaymentRequest: Hashable, CustomStringConvertible {
   var orderDetailsJson: String
   var showOrderAmount: Bool? = nil
   var showCancelAlert: Bool? = nil
-  var themeMap: [String?: String?]? = nil
+  var themeMap: [String?: Any?]? = nil
   var googlePayConfigMap: [String?: Any?]? = nil
 
 
@@ -238,7 +238,7 @@ struct CardPaymentRequest: Hashable, CustomStringConvertible {
     let orderDetailsJson = pigeonVar_list[0] as! String
     let showOrderAmount: Bool? = nilOrValue(pigeonVar_list[1])
     let showCancelAlert: Bool? = nilOrValue(pigeonVar_list[2])
-    let themeMap: [String?: String?]? = nilOrValue(pigeonVar_list[3])
+    let themeMap: [String?: Any?]? = nilOrValue(pigeonVar_list[3])
     let googlePayConfigMap: [String?: Any?]? = nilOrValue(pigeonVar_list[4])
 
     return CardPaymentRequest(
@@ -283,14 +283,14 @@ struct CardPaymentRequest: Hashable, CustomStringConvertible {
 struct SavedCardPaymentRequest: Hashable, CustomStringConvertible {
   var orderDetailsJson: String
   var cvv: String? = nil
-  var themeMap: [String?: String?]? = nil
+  var themeMap: [String?: Any?]? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> SavedCardPaymentRequest? {
     let orderDetailsJson = pigeonVar_list[0] as! String
     let cvv: String? = nilOrValue(pigeonVar_list[1])
-    let themeMap: [String?: String?]? = nilOrValue(pigeonVar_list[2])
+    let themeMap: [String?: Any?]? = nilOrValue(pigeonVar_list[2])
 
     return SavedCardPaymentRequest(
       orderDetailsJson: orderDetailsJson,
@@ -328,14 +328,14 @@ struct SavedCardPaymentRequest: Hashable, CustomStringConvertible {
 struct ApplePayRequest: Hashable, CustomStringConvertible {
   var orderDetailsJson: String
   var applePayConfigMap: [String?: Any?]
-  var themeMap: [String?: String?]? = nil
+  var themeMap: [String?: Any?]? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> ApplePayRequest? {
     let orderDetailsJson = pigeonVar_list[0] as! String
     let applePayConfigMap = pigeonVar_list[1] as! [String?: Any?]
-    let themeMap: [String?: String?]? = nilOrValue(pigeonVar_list[2])
+    let themeMap: [String?: Any?]? = nilOrValue(pigeonVar_list[2])
 
     return ApplePayRequest(
       orderDetailsJson: orderDetailsJson,

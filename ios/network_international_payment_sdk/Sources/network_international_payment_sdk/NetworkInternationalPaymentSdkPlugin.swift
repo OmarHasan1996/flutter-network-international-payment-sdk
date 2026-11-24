@@ -5,7 +5,7 @@ import os.log
 import PassKit
 
 public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, NetworkInternationalPaymentSdkApi, CardPaymentDelegate, ApplePayDelegate {
-    private var pendingCompletion: ((Result<PaymentResultData, Error>) -> Void)?
+    private var pendingContinuation: CheckedContinuation<PaymentResultData, Error>?
     private var currentOrderReference: String?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -14,126 +14,132 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Netw
         NetworkInternationalPaymentSdkApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance)
     }
 
-    func startCardPayment(request: CardPaymentRequest, completion: @escaping (Result<PaymentResultData, Error>) -> Void) {
-        if pendingCompletion != nil {
-            completion(.failure(PigeonError(code: "ALREADY_ACTIVE", message: "A payment is already in progress.", details: nil)))
-            return
-        }
-        pendingCompletion = completion
-
-        if let showAmount = request.showOrderAmount { NISdk.sharedInstance.shouldShowOrderAmount = showAmount }
-        if let showPrompt = request.showCancelAlert { NISdk.sharedInstance.shouldShowCancelAlert = showPrompt }
-        if let themeMap = request.themeMap, let iosTheme = themeMap.compactMapValues({ $0 }) as? [String: String] {
-            applyTheme(from: iosTheme)
-        }
-
-        do {
-            guard let orderData = request.orderDetailsJson.data(using: .utf8) else {
-                completePayment(withError: PigeonError(code: "INVALID_ARGUMENTS", message: "Invalid orderDetails JSON string", details: nil))
+    func startCardPayment(request: CardPaymentRequest) async throws -> PaymentResultData {
+        return try await withCheckedThrowingContinuation { continuation in
+            if pendingContinuation != nil {
+                continuation.resume(throwing: PigeonError(code: "ALREADY_ACTIVE", message: "A payment is already in progress.", details: nil))
                 return
             }
-            let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
-            self.currentOrderReference = orderResponse.reference
+            pendingContinuation = continuation
 
-            DispatchQueue.main.async {
-                guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
-                    self.completePayment(withError: PigeonError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil))
+            if let showAmount = request.showOrderAmount { NISdk.sharedInstance.shouldShowOrderAmount = showAmount }
+            if let showPrompt = request.showCancelAlert { NISdk.sharedInstance.shouldShowCancelAlert = showPrompt }
+            if let iosTheme = extractIosTheme(from: request.themeMap) {
+                applyTheme(from: iosTheme)
+            }
+
+            do {
+                guard let orderData = request.orderDetailsJson.data(using: .utf8) else {
+                    completePayment(withError: PigeonError(code: "INVALID_ARGUMENTS", message: "Invalid orderDetails JSON string", details: nil))
                     return
                 }
+                let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
+                self.currentOrderReference = orderResponse.reference
 
-                NISdk.sharedInstance.showCardPaymentViewWith(cardPaymentDelegate: self,
-                                                             overParent: rootViewController,
-                                                             for: orderResponse)
+                DispatchQueue.main.async {
+                    guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
+                        self.completePayment(withError: PigeonError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil))
+                        return
+                    }
+
+                    NISdk.sharedInstance.showCardPaymentViewWith(cardPaymentDelegate: self,
+                                                                 overParent: rootViewController,
+                                                                 for: orderResponse)
+                }
+            } catch {
+                let errorMessage = "Failed to create OrderResponse. Error: \(error)"
+                completePayment(withError: PigeonError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
             }
-        } catch {
-            let errorMessage = "Failed to create OrderResponse. Error: \(error)"
-            completePayment(withError: PigeonError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
         }
     }
 
-    func startSavedCardPayment(request: SavedCardPaymentRequest, completion: @escaping (Result<PaymentResultData, Error>) -> Void) {
-        if pendingCompletion != nil {
-            completion(.failure(PigeonError(code: "ALREADY_ACTIVE", message: "A payment is already in progress.", details: nil)))
-            return
-        }
-        pendingCompletion = completion
-
-        if let themeMap = request.themeMap, let iosTheme = themeMap.compactMapValues({ $0 }) as? [String: String] {
-            applyTheme(from: iosTheme)
-        }
-
-        do {
-            guard let orderData = request.orderDetailsJson.data(using: .utf8) else {
-                completePayment(withError: PigeonError(code: "INVALID_ARGUMENTS", message: "Invalid orderDetails JSON string", details: nil))
+    func startSavedCardPayment(request: SavedCardPaymentRequest) async throws -> PaymentResultData {
+        return try await withCheckedThrowingContinuation { continuation in
+            if pendingContinuation != nil {
+                continuation.resume(throwing: PigeonError(code: "ALREADY_ACTIVE", message: "A payment is already in progress.", details: nil))
                 return
             }
-            let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
-            self.currentOrderReference = orderResponse.reference
+            pendingContinuation = continuation
 
-            DispatchQueue.main.async {
-                guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
-                    self.completePayment(withError: PigeonError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil))
+            if let iosTheme = extractIosTheme(from: request.themeMap) {
+                applyTheme(from: iosTheme)
+            }
+
+            do {
+                guard let orderData = request.orderDetailsJson.data(using: .utf8) else {
+                    completePayment(withError: PigeonError(code: "INVALID_ARGUMENTS", message: "Invalid orderDetails JSON string", details: nil))
                     return
                 }
+                let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
+                self.currentOrderReference = orderResponse.reference
 
-                NISdk.sharedInstance.launchSavedCardPayment(cardPaymentDelegate: self,
-                                                            overParent: rootViewController,
-                                                            for: orderResponse,
-                                                            with: request.cvv)
+                DispatchQueue.main.async {
+                    guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
+                        self.completePayment(withError: PigeonError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil))
+                        return
+                    }
+
+                    NISdk.sharedInstance.launchSavedCardPayment(cardPaymentDelegate: self,
+                                                                overParent: rootViewController,
+                                                                for: orderResponse,
+                                                                with: request.cvv)
+                }
+            } catch {
+                let errorMessage = "Failed to create OrderResponse. Error: \(error)"
+                completePayment(withError: PigeonError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
             }
-        } catch {
-            let errorMessage = "Failed to create OrderResponse. Error: \(error)"
-            completePayment(withError: PigeonError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
         }
     }
 
-    func startApplePay(request: ApplePayRequest, completion: @escaping (Result<PaymentResultData, Error>) -> Void) {
-        if pendingCompletion != nil {
-            completion(.failure(PigeonError(code: "ALREADY_ACTIVE", message: "A payment is already in progress.", details: nil)))
-            return
-        }
-        pendingCompletion = completion
-
-        if let themeMap = request.themeMap, let iosTheme = themeMap.compactMapValues({ $0 }) as? [String: String] {
-            applyTheme(from: iosTheme)
-        }
-
-        do {
-            guard let orderData = request.orderDetailsJson.data(using: .utf8) else {
-                completePayment(withError: PigeonError(code: "INVALID_ARGUMENTS", message: "Invalid orderDetails JSON string", details: nil))
+    func startApplePay(request: ApplePayRequest) async throws -> PaymentResultData {
+        return try await withCheckedThrowingContinuation { continuation in
+            if pendingContinuation != nil {
+                continuation.resume(throwing: PigeonError(code: "ALREADY_ACTIVE", message: "A payment is already in progress.", details: nil))
                 return
             }
-            let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
-            self.currentOrderReference = orderResponse.reference
+            pendingContinuation = continuation
 
-            let applePayDict = request.applePayConfigMap.compactMapValues { $0 }
-            var paymentRequest = try PKPaymentRequest(from: applePayDict)
-
-            if let amountValue = orderResponse.amount?.value {
-                let totalAmount = NSDecimalNumber(value: amountValue).dividing(by: 100)
-                paymentRequest.paymentSummaryItems.append(PKPaymentSummaryItem(label: "TOTAL", amount: totalAmount))
+            if let iosTheme = extractIosTheme(from: request.themeMap) {
+                applyTheme(from: iosTheme)
             }
 
-            DispatchQueue.main.async {
-                guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
-                    self.completePayment(withError: PigeonError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil))
+            do {
+                guard let orderData = request.orderDetailsJson.data(using: .utf8) else {
+                    completePayment(withError: PigeonError(code: "INVALID_ARGUMENTS", message: "Invalid orderDetails JSON string", details: nil))
                     return
                 }
+                let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: orderData)
+                self.currentOrderReference = orderResponse.reference
 
-                NISdk.sharedInstance.initiateApplePayWith(applePayDelegate: self,
-                                                          cardPaymentDelegate: self,
-                                                          overParent: rootViewController,
-                                                          for: orderResponse,
-                                                          with: paymentRequest)
+                let applePayDict = extractApplePayDict(from: request.applePayConfigMap)
+                var paymentRequest = try PKPaymentRequest(from: applePayDict)
+
+                if let amountValue = orderResponse.amount?.value {
+                    let totalAmount = NSDecimalNumber(value: amountValue).dividing(by: 100)
+                    paymentRequest.paymentSummaryItems.append(PKPaymentSummaryItem(label: "TOTAL", amount: totalAmount))
+                }
+
+                DispatchQueue.main.async {
+                    guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
+                        self.completePayment(withError: PigeonError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Could not get root view controller", details: nil))
+                        return
+                    }
+
+                    NISdk.sharedInstance.initiateApplePayWith(applePayDelegate: self,
+                                                              cardPaymentDelegate: self,
+                                                              overParent: rootViewController,
+                                                              for: orderResponse,
+                                                              with: paymentRequest)
+                }
+            } catch {
+                let errorMessage = "Failed to create payment request for Apple Pay. Error: \(error)"
+                completePayment(withError: PigeonError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
             }
-        } catch {
-            let errorMessage = "Failed to create payment request for Apple Pay. Error: \(error)"
-            completePayment(withError: PigeonError(code: "DECODING_ERROR", message: errorMessage, details: error.localizedDescription))
         }
     }
 
-    func startSamsungPay(request: SamsungPayRequest, completion: @escaping (Result<PaymentResultData, Error>) -> Void) {
-        completion(.success(PaymentResultData(status: "FAILED", reason: "Samsung Pay is only supported on Android.")))
+    func startSamsungPay(request: SamsungPayRequest) async throws -> PaymentResultData {
+        return PaymentResultData(status: "FAILED", reason: "Samsung Pay is only supported on Android.")
     }
 
     // MARK: - CardPaymentDelegate & ApplePayDelegate
@@ -160,6 +166,26 @@ public class NetworkInternationalPaymentSdkPlugin: NSObject, FlutterPlugin, Netw
 
 // MARK: - Private Helpers
 private extension NetworkInternationalPaymentSdkPlugin {
+
+    func extractIosTheme(from themeMap: [String?: Any?]?) -> [String: String]? {
+        guard let themeMap = themeMap else { return nil }
+        for (key, value) in themeMap {
+            if key == "ios", let dict = value as? [String: String] {
+                return dict
+            }
+        }
+        return nil
+    }
+
+    func extractApplePayDict(from configMap: [String?: Any?]) -> [String: Any] {
+        var result: [String: Any] = [:]
+        for (key, value) in configMap {
+            if let k = key, let v = value {
+                result[k] = v
+            }
+        }
+        return result
+    }
 
     func applyTheme(from iosTheme: [String: String]) {
         let sdkColors = NISdkColors()
@@ -188,15 +214,15 @@ private extension NetworkInternationalPaymentSdkPlugin {
     }
 
     func completePayment(withResult result: PaymentResultData) {
-        guard let completion = pendingCompletion else { return }
-        completion(.success(result))
-        pendingCompletion = nil
+        guard let continuation = pendingContinuation else { return }
+        continuation.resume(returning: result)
+        pendingContinuation = nil
     }
 
     func completePayment(withError error: Error) {
-        guard let completion = pendingCompletion else { return }
-        completion(.failure(error))
-        pendingCompletion = nil
+        guard let continuation = pendingContinuation else { return }
+        continuation.resume(throwing: error)
+        pendingContinuation = nil
     }
 
     func hexStringToUIColor (hex:String) -> UIColor {
